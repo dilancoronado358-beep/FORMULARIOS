@@ -35,18 +35,25 @@ export default function FormBuilder() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      const savedForms = JSON.parse(localStorage.getItem('rm_forms_list') || '[]');
-      const found = savedForms.find((f: any) => f.id === id);
-      if (found) {
-        setFields(found.fields || []);
-        setFormDetails({
-          title: found.title || '',
-          description: found.description || '',
-          settings: found.settings || { footerText: '', backgroundColor: '#F8FAFC' }
-        });
+    async function loadForm() {
+      if (id) {
+        try {
+          const { data, error } = await supabase.from('forms').select('*').eq('id', id).single();
+          if (data) {
+            const loadedFields = data.fields || (data.settings && data.settings.fields) || [];
+            setFields(loadedFields);
+            setFormDetails({
+              title: data.title || '',
+              description: data.description || '',
+              settings: data.settings || { footerText: '', backgroundColor: '#F8FAFC' }
+            });
+          }
+        } catch (e) {
+          console.error(e);
+        }
       }
     }
+    loadForm();
   }, [id]);
 
   useEffect(() => {
@@ -90,17 +97,26 @@ export default function FormBuilder() {
 
     // 1. Guardar en Supabase
     try {
+      const formId = id || crypto.randomUUID();
       const { error } = await supabase.from('forms').upsert({
-        id: newForm.id,
-        title: newForm.title,
+        id: formId,
+        title: newForm.title || 'Formulario sin título',
+        slug: formId, // El slug es obligatorio
         description: newForm.description,
-        settings: newForm.settings,
         status: newForm.status,
-        fields: newForm.fields
+        settings: { ...newForm.settings, fields: newForm.fields } // Almacenamos fields dentro de settings (JSONB)
       });
-      if (error) console.error("Error guardando en Supabase:", error);
+      
+      if (error) {
+        console.error("Error guardando en Supabase:", error);
+        alert("Error al guardar en la nube: " + error.message);
+        setIsSaving(false);
+        return;
+      }
     } catch(e) {
       console.error("Error en try-catch de Supabase:", e);
+      setIsSaving(false);
+      return;
     }
 
     // 2. Guardar en localStorage (Fallback)

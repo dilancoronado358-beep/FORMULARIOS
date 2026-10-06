@@ -40,7 +40,8 @@ export default function PublicForm() {
     );
   }
 
-  const { title, description, fields = [], settings = {} } = form;
+  const { title, description, settings = {} } = form;
+  const fields = form.fields || settings.fields || [];
   const bgColor = settings.backgroundColor || '#F8FAFC';
   const bgImage = settings.backgroundImage || null;
   
