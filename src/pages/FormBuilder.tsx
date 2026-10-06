@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Type, AlignLeft, Hash, Calendar, CheckSquare, List, GripVertical, Settings2, Save, Play, ChevronLeft, Plus, Trash2, UploadCloud, Image as ImageIcon, X, Link as LinkIcon, Palette, Send, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-
+import { supabase } from '../lib/supabase';
 type Field = { id: string; type: string; label: string; placeholder: string; required: boolean };
 type FormDetails = { title: string; description: string; settings: { footerText: string; backgroundColor: string } };
 
