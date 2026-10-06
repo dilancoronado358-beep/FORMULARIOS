@@ -49,11 +49,17 @@ export default function FormsList() {
   const handleDelete = async (id: string) => {
     if (confirm("¿Estás seguro de que deseas eliminar este formulario? Esta acción no se puede deshacer.")) {
       try {
-        const { error } = await supabase.from('forms').delete().eq('id', id);
+        const { data, error } = await supabase.from('forms').delete().eq('id', id).select();
         if (error) throw error;
+        
+        if (!data || data.length === 0) {
+          throw new Error("La base de datos bloqueó la eliminación (Probablemente por las políticas de seguridad RLS en Supabase). Por favor, deshabilita RLS en la tabla 'forms' o revisa los permisos.");
+        }
+        
         setForms(forms.filter(f => f.id !== id));
-      } catch (e) {
-        alert("Error al eliminar el formulario");
+      } catch (e: any) {
+        console.error(e);
+        alert("No se pudo eliminar: " + (e.message || "Error desconocido"));
       }
     }
   };
