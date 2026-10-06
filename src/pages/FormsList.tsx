@@ -21,50 +21,18 @@ export default function FormsList() {
           const { data: responsesData } = await supabase.from('form_responses').select('form_id');
           supabaseResponses = responsesData || [];
         } catch(e) {
-          console.error("Supabase not fully configured yet", e);
+          console.error("Supabase error:", e);
         }
 
-        // 2. Load Local Forms
-        let localForms: any[] = [];
-        const localFormsStr = localStorage.getItem('rm_forms_list');
-        if (localFormsStr) {
-          try { localForms = JSON.parse(localFormsStr); } catch(e) {}
-        }
+        const allForms = supabaseForms.map((f: any) => ({
+          id: f.id,
+          title: f.title,
+          status: f.status,
+          date: new Date(f.created_at).toISOString().split('T')[0],
+          responses: supabaseResponses.filter((r: any) => r.form_id === f.id).length
+        }));
 
-        let localResponses: any[] = [];
-        const localResponsesStr = localStorage.getItem('rm_responses_list');
-        if (localResponsesStr) {
-          try { localResponses = JSON.parse(localResponsesStr); } catch(e) {}
-        }
-
-        // 3. Merge them
-        const allFormsMap = new Map();
-
-        // Add Supabase forms
-        supabaseForms.forEach((f: any) => {
-          allFormsMap.set(f.id, {
-            id: f.id,
-            title: f.title,
-            status: f.status,
-            date: new Date(f.created_at).toISOString().split('T')[0],
-            responses: supabaseResponses.filter((r: any) => r.form_id === f.id).length
-          });
-        });
-
-        // Add Local forms (if not already mapped, preventing duplicates if they were somehow synced)
-        localForms.forEach((lf: any) => {
-          if (!allFormsMap.has(lf.id)) {
-            allFormsMap.set(lf.id, {
-              id: lf.id,
-              title: lf.title,
-              status: lf.status || 'PUBLISHED',
-              date: lf.date || new Date().toISOString().split('T')[0],
-              responses: localResponses.filter((r: any) => r.formId === lf.id).length
-            });
-          }
-        });
-
-        setForms(Array.from(allFormsMap.values()));
+        setForms(allForms.reverse());
       } catch (error) {
         console.error('Error loading forms:', error);
       }

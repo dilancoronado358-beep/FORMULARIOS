@@ -6,16 +6,27 @@ export default function Responses() {
   const [responses, setResponses] = useState<any[]>([]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('rm_responses_list');
-    if (saved) {
+    async function fetchResponses() {
       try {
-        const parsed = JSON.parse(saved);
-        // Mostrar los más recientes primero
-        setResponses(parsed.reverse());
+        const { data, error } = await supabase.from('form_responses').select('*, forms(title)').order('created_at', { ascending: false });
+        if (data) {
+          const formatted = data.map(r => ({
+            id: r.id,
+            formId: r.form_id,
+            formName: r.forms?.title || 'Formulario',
+            user: r.user_name || 'Anónimo',
+            email: r.user_email || 'No proporcionado',
+            date: new Date(r.created_at).toISOString().split('T')[0],
+            status: r.status,
+            data: r.data
+          }));
+          setResponses(formatted);
+        }
       } catch (e) {
         console.error(e);
       }
     }
+    fetchResponses();
   }, []);
 
   const [viewResponse, setViewResponse] = useState<any>(null);

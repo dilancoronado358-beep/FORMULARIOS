@@ -16,15 +16,17 @@ export default function PublicForm() {
   const [errors, setErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const saved = localStorage.getItem('rm_forms_list');
-    if (saved) {
-      const forms = JSON.parse(saved);
-      // Try finding by ID
-      const found = forms.find((f: any) => f.id === slug);
-      if (found) {
-        setForm(found);
+    async function loadForm() {
+      try {
+        const { data, error } = await supabase.from('forms').select('*').eq('id', slug).single();
+        if (data) {
+          setForm(data);
+        }
+      } catch (err) {
+        console.error("Error cargando formulario de Supabase:", err);
       }
     }
+    if (slug) loadForm();
   }, [slug]);
 
   if (!form) {

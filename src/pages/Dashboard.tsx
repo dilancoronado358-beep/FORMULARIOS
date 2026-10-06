@@ -25,24 +25,18 @@ export default function Dashboard() {
           supabaseResponses = responses || [];
         } catch(e) {}
 
-        let localForms: any[] = [];
-        let localResponses: any[] = [];
-        try { localForms = JSON.parse(localStorage.getItem('rm_forms_list') || '[]'); } catch(e) {}
-        try { localResponses = JSON.parse(localStorage.getItem('rm_responses_list') || '[]'); } catch(e) {}
-
-        const totalForms = new Set([...supabaseForms.map(f => f.id), ...localForms.map(f => f.id)]);
-        const publishedForms = supabaseForms.filter(f => f.status === 'PUBLISHED').length + localForms.filter(f => f.status === 'PUBLISHED' || !f.status).length;
+        const totalForms = supabaseForms.length;
+        const publishedForms = supabaseForms.filter(f => f.status === 'PUBLISHED').length;
         
-        // Count unique participants by IP + User Agent for Supabase, Name + Email for Local
-        const uniqueUsers = new Set([
-          ...supabaseResponses.map(r => (r.user_email || '') + (r.user_name || '') + (r.ip_address || '')),
-          ...localResponses.map(r => (r.user || '') + (r.email || ''))
-        ]);
+        // Count unique participants
+        const uniqueUsers = new Set(
+          supabaseResponses.map(r => (r.user_email || '') + (r.user_name || '') + (r.ip_address || ''))
+        );
 
         setStats({
-          totalForms: totalForms.size,
+          totalForms: totalForms,
           publishedForms: publishedForms,
-          totalResponses: supabaseResponses.length + localResponses.length,
+          totalResponses: supabaseResponses.length,
           uniqueParticipants: uniqueUsers.size
         });
       } catch (e) {
