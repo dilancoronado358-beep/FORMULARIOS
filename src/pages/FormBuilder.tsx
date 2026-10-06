@@ -81,6 +81,16 @@ export default function FormBuilder() {
     setFields(fields.map(f => f.id === activeFieldId ? { ...f, ...updates } : f));
   };
 
+  const generateUUID = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
   const handlePublish = async () => {
     setIsSaving(true);
     
@@ -97,7 +107,7 @@ export default function FormBuilder() {
 
     // 1. Guardar en Supabase
     try {
-      const formId = id || crypto.randomUUID();
+      const formId = id || generateUUID();
       const { error } = await supabase.from('forms').upsert({
         id: formId,
         title: newForm.title || 'Formulario sin título',
@@ -109,12 +119,13 @@ export default function FormBuilder() {
       
       if (error) {
         console.error("Error guardando en Supabase:", error);
-        alert("Error al guardar en la nube: " + error.message);
+        alert("Error de la base de datos al guardar: " + error.message);
         setIsSaving(false);
         return;
       }
-    } catch(e) {
+    } catch(e: any) {
       console.error("Error en try-catch de Supabase:", e);
+      alert("Error crítico al intentar guardar: " + (e.message || String(e)));
       setIsSaving(false);
       return;
     }
