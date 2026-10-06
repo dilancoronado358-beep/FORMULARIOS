@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Download, Filter, MoreVertical, FileText, X } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 export default function Responses() {
   const [searchTerm, setSearchTerm] = useState('');

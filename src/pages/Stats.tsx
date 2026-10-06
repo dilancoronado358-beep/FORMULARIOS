@@ -1,36 +1,44 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, Users, Clock, TrendingUp, ChevronDown } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 export default function Stats() {
   const [totalResponses, setTotalResponses] = useState(0);
   const [popularForms, setPopularForms] = useState<any[]>([]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('rm_responses_list');
-    if (saved) {
+    async function loadStats() {
       try {
-        const responses = JSON.parse(saved);
-        setTotalResponses(responses.length);
-
-        // Calculate popular forms
-        const counts: Record<string, number> = {};
-        responses.forEach((r: any) => {
-          counts[r.formName] = (counts[r.formName] || 0) + 1;
-        });
-
-        const sorted = Object.entries(counts)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 3)
-          .map(([name, count]) => ({
-            name,
-            count,
-            percent: Math.round((count / responses.length) * 100)
+        const { data, error } = await supabase.from('form_responses').select('*, forms(title)');
+        if (data) {
+          const formattedResponses = data.map(r => ({
+            id: r.id,
+            formName: r.forms?.title || 'Formulario',
           }));
-        setPopularForms(sorted);
+          
+          setTotalResponses(formattedResponses.length);
+
+          // Calculate popular forms
+          const counts: Record<string, number> = {};
+          formattedResponses.forEach((r: any) => {
+            counts[r.formName] = (counts[r.formName] || 0) + 1;
+          });
+
+          const sorted = Object.entries(counts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(([name, count]) => ({
+              name,
+              count,
+              percent: Math.round((count / formattedResponses.length) * 100)
+            }));
+          setPopularForms(sorted);
+        }
       } catch (e) {
         console.error(e);
       }
     }
+    loadStats();
   }, []);
 
   const statCards = [
