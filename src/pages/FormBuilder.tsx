@@ -74,38 +74,54 @@ export default function FormBuilder() {
     setFields(fields.map(f => f.id === activeFieldId ? { ...f, ...updates } : f));
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     setIsSaving(true);
     
-    setTimeout(() => {
-      // Guardar en la lista global de formularios
-      const existingForms = JSON.parse(localStorage.getItem('rm_forms_list') || '[]');
-      const newForm = {
-        id: id || Date.now().toString(),
-        title: formDetails.title,
-        description: formDetails.description,
-        settings: formDetails.settings,
-        status: 'PUBLISHED',
-        responses: id ? (existingForms.find((f: any) => f.id === id)?.responses || 0) : 0,
-        date: new Date().toISOString().split('T')[0],
-        fields: fields
-      };
-      if (id) {
-        const updatedForms = existingForms.map((f: any) => f.id === id ? newForm : f);
-        localStorage.setItem('rm_forms_list', JSON.stringify(updatedForms));
-      } else {
-        localStorage.setItem('rm_forms_list', JSON.stringify([newForm, ...existingForms]));
-      }
-      
-      // Limpiar el constructor actual para la próxima vez solo si es nuevo
-      if (!id) {
-        localStorage.removeItem('rm_builder_fields');
-        localStorage.removeItem('rm_builder_details');
-      }
-      
-      setIsSaving(false);
-      navigate('/forms');
-    }, 1000);
+    const newForm = {
+      id: id || Date.now().toString(),
+      title: formDetails.title,
+      description: formDetails.description,
+      settings: formDetails.settings,
+      status: 'PUBLISHED',
+      date: new Date().toISOString().split('T')[0],
+      fields: fields,
+      responses: 0
+    };
+
+    // 1. Guardar en Supabase
+    try {
+      const { error } = await supabase.from('forms').upsert({
+        id: newForm.id,
+        title: newForm.title,
+        description: newForm.description,
+        settings: newForm.settings,
+        status: newForm.status,
+        fields: newForm.fields
+      });
+      if (error) console.error("Error guardando en Supabase:", error);
+    } catch(e) {
+      console.error("Error en try-catch de Supabase:", e);
+    }
+
+    // 2. Guardar en localStorage (Fallback)
+    const existingForms = JSON.parse(localStorage.getItem('rm_forms_list') || '[]');
+    newForm.responses = id ? (existingForms.find((f: any) => f.id === id)?.responses || 0) : 0;
+
+    if (id) {
+      const updatedForms = existingForms.map((f: any) => f.id === id ? newForm : f);
+      localStorage.setItem('rm_forms_list', JSON.stringify(updatedForms));
+    } else {
+      localStorage.setItem('rm_forms_list', JSON.stringify([newForm, ...existingForms]));
+    }
+    
+    // Limpiar el constructor actual para la próxima vez solo si es nuevo
+    if (!id) {
+      localStorage.removeItem('rm_builder_fields');
+      localStorage.removeItem('rm_builder_details');
+    }
+    
+    setIsSaving(false);
+    navigate('/forms');
   };
 
   const availableTools = [
