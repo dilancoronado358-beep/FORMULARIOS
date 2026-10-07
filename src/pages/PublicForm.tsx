@@ -218,15 +218,9 @@ export default function PublicForm() {
           // 1. Verificar Duplicados
           let isDuplicate = false;
           
-          const hasLocalDuplicate = existing.some((r: any) => 
-            r.formId === form.id && 
-            ((r.email.toLowerCase() === inferredEmail.toLowerCase() && r.email !== 'No proporcionado') || 
-             (r.user.toLowerCase() === inferredName.toLowerCase() && r.user !== 'Anónimo'))
-          );
-
-          if (hasLocalDuplicate) {
-            isDuplicate = true;
-          } else if (inferredEmail !== 'No proporcionado' || inferredName !== 'Anónimo') {
+          if (inferredEmail !== 'No proporcionado' || inferredName !== 'Anónimo') {
+            // Si hay datos personales, confiamos 100% en la base de datos (Supabase)
+            // Así, si el admin borró el registro, Supabase dirá que no existe y le permitirá registrarse
             try {
               let query = supabase.from('form_responses').select('id').eq('form_id', form.id);
               
@@ -242,6 +236,12 @@ export default function PublicForm() {
               }
             } catch(e) {
               console.error("Error checking duplicates:", e);
+            }
+          } else {
+            // Si es un formulario 100% anónimo (sin nombre ni email), usamos la memoria local para evitar spam
+            const hasLocalDuplicate = existing.some((r: any) => r.formId === form.id);
+            if (hasLocalDuplicate) {
+              isDuplicate = true;
             }
           }
 
