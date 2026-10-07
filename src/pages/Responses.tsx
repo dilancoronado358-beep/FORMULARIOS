@@ -82,28 +82,41 @@ export default function Responses() {
       }
     });
 
-    // Collect all unique question labels
-    const allKeys = new Set<string>();
-    responses.forEach(r => {
-      Object.keys(r.data || {}).forEach(k => allKeys.add(k));
+    // Normalize data: transform all keys to labels (resolving UUIDs to labels if necessary)
+    const normalizedResponses = responses.map(r => {
+      const normalizedData: Record<string, any> = {};
+      Object.entries(r.data || {}).forEach(([k, v]) => {
+         const label = idToLabelMap[k] || k;
+         normalizedData[label] = v;
+      });
+      return { ...r, normalizedData };
     });
 
-    // Get true labels for the header
-    const headerLabels = Array.from(allKeys).map(k => idToLabelMap[k] || k);
+    // Collect all unique labels
+    const allLabels = new Set<string>();
+    normalizedResponses.forEach(r => {
+      Object.keys(r.normalizedData).forEach(label => allLabels.add(label));
+    });
+
+    const headerLabels = Array.from(allLabels);
     const header = ['ID', 'Formulario', 'Fecha', 'Remitente', 'Correo', ...headerLabels];
     
     let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
     // Use semicolon for Excel compatibility in Spanish locales
     csvContent += header.join(";") + "\n";
 
-    responses.forEach(r => {
+    normalizedResponses.forEach(r => {
       const row = [
         r.id, 
         r.formName, 
         r.date, 
         r.user, 
         r.email,
-        ...Array.from(allKeys).map(k => `"${(r.data[k] || '').toString().replace(/"/g, '""')}"`)
+        ...headerLabels.map(label => {
+          const val = r.normalizedData[label];
+          const strVal = Array.isArray(val) ? val.join(', ') : (val || '').toString();
+          return `"${strVal.replace(/"/g, '""')}"`;
+        })
       ];
       csvContent += row.join(";") + "\n";
     });
@@ -215,8 +228,8 @@ export default function Responses() {
           <div className="bg-white rounded-[2rem] w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl animate-scale-up border border-slate-200 overflow-hidden">
             <div className="p-8 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-black text-slate-800">Respuesta #{viewResponse.id}</h2>
-                <p className="text-slate-500 mt-1 font-medium">{viewResponse.formName} • {viewResponse.date}</p>
+                <h2 className="text-2xl font-black text-slate-800">Respuesta: {viewResponse.formName}</h2>
+                <p className="text-slate-500 mt-1 font-medium">De: {viewResponse.user} • {viewResponse.date}</p>
               </div>
               <button 
                 onClick={() => setViewResponse(null)}
@@ -228,38 +241,42 @@ export default function Responses() {
             
             <div className="p-8 overflow-y-auto bg-white flex-1">
               <div className="space-y-8">
-                {Object.entries(viewResponse.data || {}).map(([question, answer]: any, i) => {
-                  // Resolve ID to label if needed
-                  let label = question;
+                {(() => {
+                  let orderedFields: { label: string, answer: any }[] = [];
                   
-                  // Intentar mapear con los campos que trajimos de Supabase
                   if (viewResponse.formFields && viewResponse.formFields.length > 0) {
-                     const field = viewResponse.formFields.find((f: any) => f.id === question);
-                     if (field) label = field.label;
+                    // Obtener los campos en orden original, excluyendo html y section
+                    orderedFields = viewResponse.formFields
+                      .filter((f: any) => f.type !== 'html' && f.type !== 'section')
+                      .map((f: any) => {
+                        // Buscar la respuesta usando el label o el id
+                        let answer = viewResponse.data[f.label];
+                        if (answer === undefined) answer = viewResponse.data[f.id];
+                        return { label: f.label, answer };
+                      })
+                      .filter((f: any) => f.answer !== undefined && f.answer !== null);
                   } else {
-                    // Fallback a localStorage
-                    const savedForms = localStorage.getItem('rm_forms_list');
-                    if (savedForms) {
-                      try {
-                        const formsList = JSON.parse(savedForms);
-                        formsList.forEach((form: any) => {
-                          const fields = form.fields || (form.settings && form.settings.fields) || [];
-                          const field = fields.find((f: any) => f.id === question);
-                          if (field) label = field.label;
-                        });
-                      } catch(e) {}
-                    }
+                    // Fallback si por alguna razón no tenemos formFields
+                    orderedFields = Object.entries(viewResponse.data || {}).map(([key, value]) => ({ label: key, answer: value }));
                   }
 
-                  return (
+                  if (orderedFields.length === 0) {
+                    return (
+                      <div className="text-center text-slate-500 py-8">
+                        Esta respuesta no contiene datos.
+                      </div>
+                    );
+                  }
+
+                  return orderedFields.map((field, i) => (
                     <div key={i} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
-                      <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">{label}</h3>
+                      <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">{field.label}</h3>
                       <p className="text-lg font-medium text-slate-800 break-words whitespace-pre-wrap">
-                        {Array.isArray(answer) ? answer.join(', ') : answer || '-'}
+                        {Array.isArray(field.answer) ? field.answer.join(', ') : field.answer || '-'}
                       </p>
                     </div>
-                  );
-                })}
+                  ));
+                })()}
 
                 {Object.keys(viewResponse.data || {}).length === 0 && (
                   <div className="text-center text-slate-500 py-8">
