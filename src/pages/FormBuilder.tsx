@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Type, AlignLeft, Hash, Calendar, CheckSquare, List, GripVertical, Settings2, Save, Play, ChevronLeft, Plus, Trash2, UploadCloud, Image as ImageIcon, X, Link as LinkIcon, Palette, Send, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-type Field = { id: string; type: string; label: string; placeholder: string; required: boolean };
+type Field = { id: string; type: string; label: string; placeholder: string; required: boolean; options?: string[] };
 type FormDetails = { 
   title: string; 
   description: string; 
@@ -74,12 +74,13 @@ export default function FormBuilder() {
   }, [fields, formDetails, id]);
 
   const addField = (type: string) => {
-    const newField = { 
+    const newField: Field = { 
       id: Date.now().toString(), 
       type, 
       label: type === 'section' ? 'Nueva Sección' : type === 'html' ? '<p>Escribe aquí tu texto o inserta hipervínculos como <a href="https://google.com" target="_blank" style="color:blue">Google</a></p>' : type === 'file' ? 'Subir Documento PDF' : type === 'image' ? 'Subir Fotografía' : 'Nueva Pregunta', 
       placeholder: type === 'section' ? 'Descripción de la sección...' : type === 'html' ? '' : 'Instrucciones...', 
-      required: false 
+      required: false,
+      options: (type === 'select' || type === 'checkbox') ? ['Opción A', 'Opción B', 'Opción C'] : undefined
     };
     setFields([...fields, newField]);
     setActiveFieldId(newField.id);
@@ -337,7 +338,7 @@ export default function FormBuilder() {
                 ) : field.type === 'select' ? (
                   <select className="w-full bg-white/80 border-2 border-slate-200/60 rounded-xl p-4 focus:ring-4 focus:ring-blue-50 focus:border-[#1e88e5] outline-none transition-all text-slate-800 cursor-pointer appearance-none shadow-inner">
                     <option value="">Selecciona una opción...</option>
-                    {field.options ? field.options.map((opt, i) => (
+                    {field.options ? field.options.filter(o => o.trim() !== '').map((opt, i) => (
                       <option key={i} value={opt}>{opt}</option>
                     )) : (
                       <>
@@ -349,7 +350,7 @@ export default function FormBuilder() {
                   </select>
                 ) : field.type === 'checkbox' ? (
                   <div className="space-y-3 mt-2">
-                    {(field.options && field.options.length > 0 ? field.options : ['Opción A', 'Opción B', 'Opción C']).map((opt, i) => (
+                    {(field.options && field.options.length > 0 ? field.options : ['Opción A', 'Opción B', 'Opción C']).filter(o => o.trim() !== '').map((opt, i) => (
                       <label key={i} className="flex items-center gap-3 p-3 border-2 border-slate-200/60 rounded-xl hover:border-[#1e88e5] hover:bg-blue-50/50 cursor-pointer transition-colors bg-white/60">
                         <input type="checkbox" className="w-5 h-5 rounded border-slate-300 text-[#1e88e5] focus:ring-[#1e88e5]" />
                         <span className="text-slate-800 font-medium">{opt}</span>
@@ -600,7 +601,7 @@ export default function FormBuilder() {
                           </div>
                         ) : field.type === 'checkbox' ? (
                           <div className="space-y-3 mt-2">
-                            {['Opción A', 'Opción B', 'Opción C'].map((opt, i) => (
+                            {(field.options && field.options.length > 0 ? field.options : ['Opción A', 'Opción B', 'Opción C']).filter(o => o.trim() !== '').map((opt, i) => (
                               <div key={i} className="flex items-center gap-3 p-3 border-2 border-slate-100 rounded-xl bg-slate-50 opacity-70">
                                 <div className="w-5 h-5 rounded border-2 border-slate-300"></div>
                                 <span className="text-slate-500 font-medium">{opt}</span>
@@ -733,6 +734,25 @@ export default function FormBuilder() {
                     />
                   </div>
                 )}
+
+
+                {(activeField.type === 'select' || activeField.type === 'checkbox') && (
+                  <div className="pt-4 border-t border-slate-100">
+                    <label className="block text-sm font-semibold text-slate-700 mb-3">Opciones (una por línea)</label>
+                    <textarea 
+                      value={(activeField.options || ['Opción A', 'Opción B', 'Opción C']).join('\n')}
+                      onChange={(e) => {
+                        const newOptions = e.target.value.split('\n');
+                        updateActiveField({ options: newOptions });
+                      }}
+                      className="w-full border border-slate-300 rounded-md p-3 text-sm focus:ring-2 focus:ring-[#1e88e5] focus:border-[#1e88e5] outline-none resize-none leading-relaxed"
+                      rows={5}
+                      placeholder="Opción A&#10;Opción B&#10;Opción C"
+                    />
+                    <p className="text-xs text-slate-500 mt-2 font-medium">Presiona <strong>Enter</strong> para agregar una nueva opción a la lista.</p>
+                  </div>
+                )}
+
                 <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                   <label className="text-sm font-semibold text-slate-700 cursor-pointer select-none" htmlFor="req-toggle">Obligatorio</label>
                   <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">

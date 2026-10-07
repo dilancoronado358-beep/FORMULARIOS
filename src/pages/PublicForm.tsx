@@ -435,7 +435,7 @@ export default function PublicForm() {
                   className={`w-full bg-white/80 border-2 rounded-xl p-3 md:p-4 text-sm md:text-base focus:ring-4 focus:outline-none transition-all text-slate-800 cursor-pointer appearance-none shadow-inner ${errors[field.id] ? 'border-red-300 focus:ring-red-50 focus:border-red-500' : 'border-slate-200/60 focus:ring-blue-50 focus:border-[#1e88e5]'}`}
                 >
                   <option value="">Selecciona una opción...</option>
-                  {field.options ? field.options.map((opt: string, i: number) => (
+                  {field.options ? field.options.filter((o: string) => o.trim() !== '').map((opt: string, i: number) => (
                     <option key={i} value={opt}>{opt}</option>
                   )) : (
                     <>
@@ -447,7 +447,7 @@ export default function PublicForm() {
                 </select>
               ) : field.type === 'checkbox' ? (
                 <div className="space-y-3 mt-2">
-                  {(field.options && field.options.length > 0 ? field.options : ['Opción A', 'Opción B', 'Opción C']).map((opt: string, i: number) => {
+                  {(field.options && field.options.length > 0 ? field.options : ['Opción A', 'Opción B', 'Opción C']).filter((o: string) => o.trim() !== '').map((opt: string, i: number) => {
                     const isChecked = (responses[field.id] || []).includes(opt);
                     return (
                       <label key={i} className={`flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition-colors bg-white/60 ${errors[field.id] ? 'border-red-200 hover:border-red-400 hover:bg-red-50/50' : 'border-slate-200/60 hover:border-[#1e88e5] hover:bg-blue-50/50'}`}>
