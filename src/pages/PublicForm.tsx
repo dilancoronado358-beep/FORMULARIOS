@@ -79,9 +79,41 @@ export default function PublicForm() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
-        <Loader2 className="w-10 h-10 text-[#1e88e5] animate-spin mb-4" />
-        <p className="text-slate-500 font-medium animate-pulse">Cargando formulario...</p>
+      <div className="min-h-screen relative flex flex-col items-center justify-center overflow-hidden bg-slate-50">
+        {/* Animated Background Gradients */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-white to-emerald-100 opacity-60"></div>
+        <div className="absolute w-[150vw] h-[150vw] md:w-[80vw] md:h-[80vw] bg-blue-300/30 rounded-full blur-[100px] animate-pulse"></div>
+        
+        {/* Logo Container */}
+        <div className="relative z-10 flex flex-col items-center transform transition-all">
+          <div className="relative w-40 h-40 md:w-56 md:h-56 flex items-center justify-center mb-8">
+            {/* Spinning glowing rings */}
+            <div className="absolute inset-0 border-[6px] border-transparent border-t-[#1e88e5] border-r-[#1e88e5] rounded-full animate-spin shadow-lg"></div>
+            <div className="absolute inset-[-12px] border-[6px] border-transparent border-b-emerald-500 border-l-emerald-500 rounded-full opacity-80 animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }}></div>
+            <div className="absolute inset-[-24px] border-[4px] border-transparent border-t-slate-800 border-b-slate-800 rounded-full opacity-40 animate-spin" style={{ animationDuration: '3s' }}></div>
+            
+            {/* The Logo itself */}
+            <div className="absolute inset-3 bg-white/90 backdrop-blur-md rounded-full shadow-2xl flex items-center justify-center p-4 animate-pulse" style={{ animationDuration: '2s' }}>
+              <img 
+                src="https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png" 
+                alt="Cargando" 
+                className="w-full h-full object-contain drop-shadow-md"
+              />
+            </div>
+          </div>
+          
+          {/* Loading Text */}
+          <div className="mt-8 flex flex-col items-center animate-bounce">
+            <h2 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-[#1e88e5] to-emerald-600 bg-clip-text text-transparent tracking-tight">
+              Cargando Formulario
+            </h2>
+            <div className="flex gap-2 mt-4">
+              <div className="w-3 h-3 rounded-full bg-[#1e88e5] animate-ping" style={{ animationDuration: '1s' }}></div>
+              <div className="w-3 h-3 rounded-full bg-emerald-500 animate-ping" style={{ animationDuration: '1.2s' }}></div>
+              <div className="w-3 h-3 rounded-full bg-slate-800 animate-ping" style={{ animationDuration: '1.4s' }}></div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -188,25 +220,29 @@ export default function PublicForm() {
           
           const hasLocalDuplicate = existing.some((r: any) => 
             r.formId === form.id && 
-            ((r.email === inferredEmail && r.email !== 'No proporcionado') || 
-             (r.user === inferredName && r.user !== 'Anónimo'))
+            ((r.email.toLowerCase() === inferredEmail.toLowerCase() && r.email !== 'No proporcionado') || 
+             (r.user.toLowerCase() === inferredName.toLowerCase() && r.user !== 'Anónimo'))
           );
 
           if (hasLocalDuplicate) {
             isDuplicate = true;
-          } else {
+          } else if (inferredEmail !== 'No proporcionado' || inferredName !== 'Anónimo') {
             try {
               let query = supabase.from('form_responses').select('id').eq('form_id', form.id);
+              
               if (inferredEmail !== 'No proporcionado') {
-                query = query.eq('user_email', inferredEmail);
+                query = query.ilike('user_email', inferredEmail);
               } else if (inferredName !== 'Anónimo') {
-                query = query.eq('user_name', inferredName);
+                query = query.ilike('user_name', inferredName);
               }
-              const { data: duplicateCheck } = await query;
+              
+              const { data: duplicateCheck, error: dupError } = await query;
               if (duplicateCheck && duplicateCheck.length > 0) {
                 isDuplicate = true;
               }
-            } catch(e) {}
+            } catch(e) {
+              console.error("Error checking duplicates:", e);
+            }
           }
 
           if (isDuplicate) {
@@ -217,7 +253,7 @@ export default function PublicForm() {
 
           const dataWithLabels: Record<string, any> = {};
           Object.entries(responses).forEach(([k, v]) => {
-            const field = form.fields?.find((f: any) => f.id === k);
+            const field = fields.find((f: any) => f.id === k);
             if (field) {
               dataWithLabels[field.label] = v;
             } else {
@@ -296,13 +332,34 @@ export default function PublicForm() {
         )}
 
         {submitSuccess ? (
-          <div className="flex flex-col items-center justify-center py-12 px-6 md:py-20 md:px-8 text-center bg-white/95 backdrop-blur-xl border border-white/40 shadow-2xl rounded-[2rem] md:rounded-[3rem] animate-fade-in transform transition-all hover:scale-[1.02] duration-500">
-            <div className="w-20 h-20 md:w-28 md:h-28 bg-gradient-to-tr from-emerald-400 to-teal-400 rounded-full flex items-center justify-center mb-6 md:mb-8 shadow-lg shadow-emerald-500/30 animate-[bounce_1s_ease-out]">
-              <CheckCircle2 className="w-12 h-12 md:w-16 md:h-16 text-white" />
+          <div className="relative flex flex-col items-center justify-center py-16 px-6 md:py-24 md:px-12 text-center bg-white/90 backdrop-blur-2xl border border-white/50 shadow-[0_0_100px_rgba(16,185,129,0.3)] rounded-[2rem] md:rounded-[3rem] overflow-hidden group">
+            {/* Animated Celebration Background */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-emerald-50 via-transparent to-blue-50 opacity-50"></div>
+            <div className="absolute -top-32 -left-32 w-64 h-64 bg-emerald-400/20 rounded-full blur-[50px] animate-pulse" style={{ animationDuration: '3s' }}></div>
+            <div className="absolute -bottom-32 -right-32 w-64 h-64 bg-blue-400/20 rounded-full blur-[50px] animate-pulse" style={{ animationDuration: '4s' }}></div>
+            
+            {/* Explosive rings */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[500px] md:h-[500px] border-[2px] border-emerald-400/50 rounded-full animate-ping" style={{ animationDuration: '2s' }}></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[700px] md:h-[700px] border-[1px] border-blue-400/30 rounded-full animate-ping" style={{ animationDuration: '3s' }}></div>
+
+            <div className="relative z-10 w-32 h-32 md:w-40 md:h-40 mb-8 flex items-center justify-center animate-[bounce_2s_ease-in-out_infinite]">
+              {/* Spinning success ring */}
+              <div className="absolute inset-0 border-8 border-transparent border-t-emerald-400 border-r-emerald-400 rounded-full animate-spin shadow-[0_0_20px_rgba(52,211,153,0.6)]" style={{ animationDuration: '1.5s' }}></div>
+              <div className="absolute inset-0 border-8 border-transparent border-b-[#1e88e5] border-l-[#1e88e5] rounded-full animate-spin shadow-[0_0_20px_rgba(30,136,229,0.6)]" style={{ animationDuration: '2s', animationDirection: 'reverse' }}></div>
+              
+              <div className="absolute inset-4 bg-gradient-to-tr from-emerald-400 to-teal-500 rounded-full shadow-2xl flex items-center justify-center">
+                 <CheckCircle2 className="w-16 h-16 md:w-20 md:h-20 text-white drop-shadow-lg" />
+              </div>
             </div>
-            <h1 className="text-3xl md:text-5xl font-black text-slate-900 mb-4 md:mb-6 tracking-tight">¡Muchas gracias!</h1>
-            <p className="text-lg md:text-xl text-slate-600 max-w-lg mb-8 md:mb-10 leading-relaxed">
-              Tus respuestas han sido recibidas y registradas exitosamente. Apreciamos tu tiempo.
+
+            <h1 className="relative z-10 text-4xl md:text-6xl font-black bg-gradient-to-r from-emerald-600 to-[#1e88e5] bg-clip-text text-transparent mb-4 md:mb-6 tracking-tight animate-pulse" style={{ animationDuration: '3s' }}>
+              ¡Misión Cumplida!
+            </h1>
+            <p className="relative z-10 text-lg md:text-2xl text-slate-700 max-w-lg mb-4 font-medium leading-relaxed">
+              Tus respuestas han sido registradas con éxito en el sistema central.
+            </p>
+            <p className="relative z-10 text-sm md:text-base text-slate-500 font-bold tracking-widest uppercase mt-4 opacity-70">
+              Renovación Montufareña agradece tu tiempo
             </p>
           </div>
         ) : (

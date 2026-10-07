@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Download, Filter, MoreVertical, FileText, X } from 'lucide-react';
+import { Search, Download, Filter, MoreVertical, FileText, X, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export default function Responses() {
@@ -9,12 +9,13 @@ export default function Responses() {
   useEffect(() => {
     async function fetchResponses() {
       try {
-        const { data, error } = await supabase.from('form_responses').select('*, forms(title)').order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('form_responses').select('*, forms(title, settings)').order('created_at', { ascending: false });
         if (data) {
           const formatted = data.map(r => ({
             id: r.id,
             formId: r.form_id,
             formName: r.forms?.title || 'Formulario',
+            formFields: r.forms?.fields || r.forms?.settings?.fields || [],
             user: r.user_name || 'Anónimo',
             email: r.user_email || 'No proporcionado',
             date: new Date(r.created_at).toISOString().split('T')[0],
@@ -31,6 +32,21 @@ export default function Responses() {
   }, []);
 
   const [viewResponse, setViewResponse] = useState<any>(null);
+
+  const handleDeleteResponse = async (id: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar esta respuesta? Esta acción no se puede deshacer.')) {
+      try {
+        const { error } = await supabase.from('form_responses').delete().eq('id', id);
+        if (!error) {
+          setResponses(prev => prev.filter(r => r.id !== id));
+        } else {
+          alert('Hubo un error al eliminar la respuesta.');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
 
   // Filter responses
   const filteredResponses = responses.filter(r => 
@@ -51,8 +67,16 @@ export default function Responses() {
     
     const idToLabelMap: Record<string, string> = {};
     formsList.forEach(form => {
-      if (form.fields) {
-        form.fields.forEach((f: any) => {
+      const fields = form.fields || (form.settings && form.settings.fields) || [];
+      fields.forEach((f: any) => {
+        idToLabelMap[f.id] = f.label;
+      });
+    });
+    
+    // Also use the ones loaded from Supabase per response
+    responses.forEach(r => {
+      if (r.formFields) {
+        r.formFields.forEach((f: any) => {
           idToLabelMap[f.id] = f.label;
         });
       }
@@ -163,9 +187,14 @@ export default function Responses() {
                     </span>
                   </td>
                   <td className="p-6 border-b border-slate-100 text-right">
-                    <button onClick={() => setViewResponse(res)} className="p-2 text-[#1e88e5] bg-blue-50 hover:bg-[#1e88e5] hover:text-white rounded-lg transition-colors font-bold text-sm px-4">
-                      Ver detalle
-                    </button>
+                    <div className="flex justify-end items-center gap-2">
+                      <button onClick={() => setViewResponse(res)} className="p-2 text-[#1e88e5] bg-blue-50 hover:bg-[#1e88e5] hover:text-white rounded-lg transition-colors font-bold text-sm px-4">
+                        Ver detalle
+                      </button>
+                      <button onClick={() => handleDeleteResponse(res.id)} title="Eliminar respuesta" className="p-2 text-red-500 bg-red-50 hover:bg-red-500 hover:text-white rounded-lg transition-colors">
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -202,17 +231,24 @@ export default function Responses() {
                 {Object.entries(viewResponse.data || {}).map(([question, answer]: any, i) => {
                   // Resolve ID to label if needed
                   let label = question;
-                  const savedForms = localStorage.getItem('rm_forms_list');
-                  if (savedForms) {
-                    try {
-                      const formsList = JSON.parse(savedForms);
-                      formsList.forEach((form: any) => {
-                        if (form.fields) {
-                          const field = form.fields.find((f: any) => f.id === question);
+                  
+                  // Intentar mapear con los campos que trajimos de Supabase
+                  if (viewResponse.formFields && viewResponse.formFields.length > 0) {
+                     const field = viewResponse.formFields.find((f: any) => f.id === question);
+                     if (field) label = field.label;
+                  } else {
+                    // Fallback a localStorage
+                    const savedForms = localStorage.getItem('rm_forms_list');
+                    if (savedForms) {
+                      try {
+                        const formsList = JSON.parse(savedForms);
+                        formsList.forEach((form: any) => {
+                          const fields = form.fields || (form.settings && form.settings.fields) || [];
+                          const field = fields.find((f: any) => f.id === question);
                           if (field) label = field.label;
-                        }
-                      });
-                    } catch(e) {}
+                        });
+                      } catch(e) {}
+                    }
                   }
 
                   return (
