@@ -7,6 +7,7 @@ export default function PublicForm() {
   const { slug } = useParams(); // Using slug as parameter name to match App.tsx mapping or we can update App.tsx to use :id. App.tsx currently uses path="/f/:slug". I will use the actual ID here as the parameter.
   const navigate = useNavigate();
   const [form, setForm] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -14,6 +15,8 @@ export default function PublicForm() {
   
   const [responses, setResponses] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, boolean>>({});
+  const [isClosed, setIsClosed] = useState(false);
+  const [closedReason, setClosedReason] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadForm() {
@@ -21,13 +24,67 @@ export default function PublicForm() {
         const { data, error } = await supabase.from('forms').select('*').eq('id', slug).single();
         if (data) {
           setForm(data);
+          
+          let closed = false;
+          let reason = null;
+
+          // Check Expiry Date
+          if (data.settings?.expiresAt) {
+            const expiryDate = new Date(data.settings.expiresAt);
+            if (new Date() > expiryDate) {
+              closed = true;
+              reason = "El periodo para llenar este formulario ha finalizado.";
+            }
+          }
+
+          // Check Max Responses
+          if (!closed && data.settings?.maxResponses) {
+             try {
+                const { count, error: countError } = await supabase
+                  .from('form_responses')
+                  .select('id', { count: 'exact', head: true })
+                  .eq('form_id', data.id);
+                  
+                const maxResponses = parseInt(data.settings.maxResponses);
+                
+                // Fallback a localStorage si Supabase falla
+                let totalResponses = count || 0;
+                if (countError) {
+                   const localResponses = JSON.parse(localStorage.getItem('rm_responses_list') || '[]');
+                   totalResponses = localResponses.filter((r: any) => r.formId === data.id).length;
+                }
+                
+                if (totalResponses >= maxResponses) {
+                  closed = true;
+                  reason = "Se ha alcanzado el límite máximo de respuestas para este formulario.";
+                }
+             } catch (e) {
+                console.error(e);
+             }
+          }
+
+          if (closed) {
+            setIsClosed(true);
+            setClosedReason(reason);
+          }
         }
       } catch (err) {
         console.error("Error cargando formulario de Supabase:", err);
+      } finally {
+        setIsLoading(false);
       }
     }
     if (slug) loadForm();
   }, [slug]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
+        <Loader2 className="w-10 h-10 text-[#1e88e5] animate-spin mb-4" />
+        <p className="text-slate-500 font-medium animate-pulse">Cargando formulario...</p>
+      </div>
+    );
+  }
 
   if (!form) {
     return (
@@ -35,6 +92,23 @@ export default function PublicForm() {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-slate-800">Formulario no encontrado</h2>
           <p className="text-slate-500 mt-2">El enlace es inválido o el formulario ya no está disponible.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isClosed) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-3xl shadow-lg border border-slate-200 text-center max-w-md w-full animate-fade-in">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <XCircle className="w-10 h-10 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 mb-2">Formulario Cerrado</h2>
+          <p className="text-slate-600 mb-6">{closedReason}</p>
+          <button onClick={() => window.history.back()} className="px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">
+            Volver
+          </button>
         </div>
       </div>
     );
@@ -189,7 +263,7 @@ export default function PublicForm() {
 
   return (
     <div 
-      className="min-h-screen py-12 px-4 flex flex-col items-center transition-colors duration-500 bg-cover bg-center bg-fixed" 
+      className="min-h-screen py-6 px-4 md:py-12 sm:px-6 lg:px-8 flex flex-col items-center transition-colors duration-500 bg-cover bg-center bg-fixed" 
       style={{ 
         backgroundColor: bgImage ? 'transparent' : bgColor,
         backgroundImage: bgImage ? `url(${bgImage})` : 'none'
@@ -222,61 +296,61 @@ export default function PublicForm() {
         )}
 
         {submitSuccess ? (
-          <div className="flex flex-col items-center justify-center py-20 px-8 text-center bg-white/95 backdrop-blur-xl border border-white/40 shadow-2xl rounded-[3rem] animate-fade-in transform transition-all hover:scale-[1.02] duration-500">
-            <div className="w-28 h-28 bg-gradient-to-tr from-emerald-400 to-teal-400 rounded-full flex items-center justify-center mb-8 shadow-lg shadow-emerald-500/30 animate-[bounce_1s_ease-out]">
-              <CheckCircle2 className="w-16 h-16 text-white" />
+          <div className="flex flex-col items-center justify-center py-12 px-6 md:py-20 md:px-8 text-center bg-white/95 backdrop-blur-xl border border-white/40 shadow-2xl rounded-[2rem] md:rounded-[3rem] animate-fade-in transform transition-all hover:scale-[1.02] duration-500">
+            <div className="w-20 h-20 md:w-28 md:h-28 bg-gradient-to-tr from-emerald-400 to-teal-400 rounded-full flex items-center justify-center mb-6 md:mb-8 shadow-lg shadow-emerald-500/30 animate-[bounce_1s_ease-out]">
+              <CheckCircle2 className="w-12 h-12 md:w-16 md:h-16 text-white" />
             </div>
-            <h1 className="text-5xl font-black text-slate-900 mb-6 tracking-tight">¡Muchas gracias!</h1>
-            <p className="text-xl text-slate-600 max-w-lg mb-10 leading-relaxed">
+            <h1 className="text-3xl md:text-5xl font-black text-slate-900 mb-4 md:mb-6 tracking-tight">¡Muchas gracias!</h1>
+            <p className="text-lg md:text-xl text-slate-600 max-w-lg mb-8 md:mb-10 leading-relaxed">
               Tus respuestas han sido recibidas y registradas exitosamente. Apreciamos tu tiempo.
             </p>
           </div>
         ) : (
           <>
             {submitError && (
-              <div className="bg-red-50 border-2 border-red-200 text-red-700 p-6 rounded-2xl flex items-start gap-4 mb-6 shadow-sm animate-fade-in">
+              <div className="bg-red-50 border-2 border-red-200 text-red-700 p-4 md:p-6 rounded-2xl flex items-start gap-4 mb-6 shadow-sm animate-fade-in">
                 <XCircle className="w-6 h-6 flex-shrink-0 text-red-500 mt-0.5" />
                 <div>
-                  <h3 className="font-bold text-lg mb-1">No se pudo enviar</h3>
-                  <p className="text-sm opacity-90">{submitError}</p>
+                  <h3 className="font-bold text-base md:text-lg mb-1">No se pudo enviar</h3>
+                  <p className="text-xs md:text-sm opacity-90">{submitError}</p>
                 </div>
               </div>
             )}
 
             {currentPage === 0 && (
-              <div className={`rounded-[2rem] border-t-[12px] border-[#1e88e5] shadow-xl p-10 flex flex-col items-center transition-colors relative overflow-hidden ${
+              <div className={`rounded-[2rem] border-t-[8px] md:border-t-[12px] border-[#1e88e5] shadow-xl p-6 md:p-10 flex flex-col items-center transition-colors relative overflow-hidden ${
                 bgImage ? 'bg-white/95 backdrop-blur-xl border border-white/40' : 'bg-white'
               }`}>
                 <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
-                <img src="https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png" alt="Logo" className="h-20 object-contain mb-6 drop-shadow-md relative z-10" />
-                <h1 className="text-4xl font-black text-slate-900 relative z-10 text-center">{title}</h1>
-                <p className="text-slate-600 mt-4 text-lg max-w-2xl font-medium relative z-10 text-center">{description}</p>
+                <img src="https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png" alt="Logo" className="h-16 md:h-20 object-contain mb-4 md:mb-6 drop-shadow-md relative z-10" />
+                <h1 className="text-2xl md:text-4xl font-black text-slate-900 relative z-10 text-center">{title}</h1>
+                <p className="text-slate-600 mt-3 md:mt-4 text-base md:text-lg max-w-2xl font-medium relative z-10 text-center">{description}</p>
               </div>
             )}
             
             {currentFields.map((field: any) => {
           if (field.type === 'section') {
             return (
-              <div key={field.id} className="pt-8 pb-4">
-                <h2 className={`text-3xl font-black ${bgImage ? 'text-white drop-shadow-md' : 'text-[#1e88e5]'}`}>{field.label}</h2>
-                {field.placeholder && <p className={`mt-2 text-lg ${bgImage ? 'text-white/80' : 'text-slate-600'}`}>{field.placeholder}</p>}
+              <div key={field.id} className="pt-6 md:pt-8 pb-2 md:pb-4">
+                <h2 className={`text-xl md:text-3xl font-black ${bgImage ? 'text-white drop-shadow-md' : 'text-[#1e88e5]'}`}>{field.label}</h2>
+                {field.placeholder && <p className={`mt-1 md:mt-2 text-base md:text-lg ${bgImage ? 'text-white/80' : 'text-slate-600'}`}>{field.placeholder}</p>}
               </div>
             );
           }
           if (field.type === 'html') {
              return (
-               <div key={field.id} className={`prose max-w-none text-slate-700 p-8 rounded-[2rem] shadow-sm ${bgImage ? 'bg-white/95 backdrop-blur-md border border-white/40' : 'bg-white border-transparent'}`} dangerouslySetInnerHTML={{ __html: field.label }} />
+               <div key={field.id} className={`prose prose-sm md:prose-base max-w-none text-slate-700 p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm ${bgImage ? 'bg-white/95 backdrop-blur-md border border-white/40' : 'bg-white border-transparent'}`} dangerouslySetInnerHTML={{ __html: field.label }} />
              );
           }
           return (
-            <div key={field.id} className={`space-y-3 p-8 rounded-[2rem] transition-all ${
+            <div key={field.id} className={`space-y-2 md:space-y-3 p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] transition-all ${
               bgImage ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-white shadow-sm'
             } ${errors[field.id] ? 'border-2 border-red-400 shadow-red-500/20' : bgImage ? 'border border-white/40' : 'border-2 border-transparent'}`}>
-              <label className="block text-base font-bold text-slate-800 flex items-center gap-2">
+              <label className="block text-sm md:text-base font-bold text-slate-800 flex items-center gap-2">
                 {field.label} {field.required && <span className="text-red-500">*</span>}
                 {errors[field.id] && <AlertCircle className="w-5 h-5 text-red-500" />}
               </label>
-              {field.placeholder && <p className="text-sm text-slate-600 mb-3">{field.placeholder}</p>}
+              {field.placeholder && <p className="text-xs md:text-sm text-slate-600 mb-2 md:mb-3">{field.placeholder}</p>}
               
               {field.type === 'textarea' ? (
                 <textarea 
@@ -285,14 +359,14 @@ export default function PublicForm() {
                     setResponses(prev => ({ ...prev, [field.id]: e.target.value }));
                     if (errors[field.id]) setErrors(prev => ({ ...prev, [field.id]: false }));
                   }}
-                  className={`w-full bg-white/80 border-2 rounded-xl p-4 focus:ring-4 focus:outline-none resize-none transition-all text-slate-800 shadow-inner ${errors[field.id] ? 'border-red-300 focus:ring-red-50 focus:border-red-500' : 'border-slate-200/60 focus:ring-blue-50 focus:border-[#1e88e5]'}`} 
+                  className={`w-full bg-white/80 border-2 rounded-xl p-3 md:p-4 text-sm md:text-base focus:ring-4 focus:outline-none resize-none transition-all text-slate-800 shadow-inner ${errors[field.id] ? 'border-red-300 focus:ring-red-50 focus:border-red-500' : 'border-slate-200/60 focus:ring-blue-50 focus:border-[#1e88e5]'}`} 
                   rows={4}
                 ></textarea>
               ) : field.type === 'file' || field.type === 'image' ? (
-                <div className={`border-2 border-dashed transition-colors p-10 rounded-xl text-center bg-white/80 cursor-pointer group shadow-inner ${errors[field.id] ? 'border-red-300 hover:border-red-500 hover:bg-red-50/50' : 'border-[#1e88e5]/40 hover:border-[#1e88e5] hover:bg-blue-50/50'}`}>
-                  <UploadCloud className={`w-10 h-10 mx-auto mb-3 transition-colors ${errors[field.id] ? 'text-red-400 group-hover:text-red-500' : 'text-[#1e88e5]/60 group-hover:text-[#1e88e5]'}`} />
-                  <p className="text-slate-700 font-medium">Haz clic o arrastra tu archivo aquí</p>
-                  <p className="text-slate-500 text-sm mt-1">Soporta PNG, JPG o PDF (Max. 10MB)</p>
+                <div className={`border-2 border-dashed transition-colors p-6 md:p-10 rounded-xl text-center bg-white/80 cursor-pointer group shadow-inner ${errors[field.id] ? 'border-red-300 hover:border-red-500 hover:bg-red-50/50' : 'border-[#1e88e5]/40 hover:border-[#1e88e5] hover:bg-blue-50/50'}`}>
+                  <UploadCloud className={`w-8 h-8 md:w-10 md:h-10 mx-auto mb-2 md:mb-3 transition-colors ${errors[field.id] ? 'text-red-400 group-hover:text-red-500' : 'text-[#1e88e5]/60 group-hover:text-[#1e88e5]'}`} />
+                  <p className="text-sm md:text-base text-slate-700 font-medium">Haz clic o arrastra tu archivo aquí</p>
+                  <p className="text-xs md:text-sm text-slate-500 mt-1">Soporta PNG, JPG o PDF (Max. 10MB)</p>
                 </div>
               ) : field.type === 'select' ? (
                 <select 
@@ -301,7 +375,7 @@ export default function PublicForm() {
                     setResponses(prev => ({ ...prev, [field.id]: e.target.value }));
                     if (errors[field.id]) setErrors(prev => ({ ...prev, [field.id]: false }));
                   }}
-                  className={`w-full bg-white/80 border-2 rounded-xl p-4 focus:ring-4 focus:outline-none transition-all text-slate-800 cursor-pointer appearance-none shadow-inner ${errors[field.id] ? 'border-red-300 focus:ring-red-50 focus:border-red-500' : 'border-slate-200/60 focus:ring-blue-50 focus:border-[#1e88e5]'}`}
+                  className={`w-full bg-white/80 border-2 rounded-xl p-3 md:p-4 text-sm md:text-base focus:ring-4 focus:outline-none transition-all text-slate-800 cursor-pointer appearance-none shadow-inner ${errors[field.id] ? 'border-red-300 focus:ring-red-50 focus:border-red-500' : 'border-slate-200/60 focus:ring-blue-50 focus:border-[#1e88e5]'}`}
                 >
                   <option value="">Selecciona una opción...</option>
                   {field.options ? field.options.map((opt: string, i: number) => (
@@ -332,7 +406,7 @@ export default function PublicForm() {
                           }}
                           className={`w-5 h-5 rounded ${errors[field.id] ? 'border-red-300 text-red-500 focus:ring-red-500' : 'border-slate-300 text-[#1e88e5] focus:ring-[#1e88e5]'}`} 
                         />
-                        <span className="text-slate-800 font-medium">{opt}</span>
+                        <span className="text-sm md:text-base text-slate-800 font-medium">{opt}</span>
                       </label>
                     );
                   })}
@@ -345,25 +419,25 @@ export default function PublicForm() {
                     setResponses(prev => ({ ...prev, [field.id]: e.target.value }));
                     if (errors[field.id]) setErrors(prev => ({ ...prev, [field.id]: false }));
                   }}
-                  className={`w-full bg-white/80 border-2 rounded-xl p-4 focus:ring-4 focus:outline-none transition-all text-slate-800 shadow-inner ${errors[field.id] ? 'border-red-300 focus:ring-red-50 focus:border-red-500' : 'border-slate-200/60 focus:ring-blue-50 focus:border-[#1e88e5]'}`} 
+                  className={`w-full bg-white/80 border-2 rounded-xl p-3 md:p-4 text-sm md:text-base focus:ring-4 focus:outline-none transition-all text-slate-800 shadow-inner ${errors[field.id] ? 'border-red-300 focus:ring-red-50 focus:border-red-500' : 'border-slate-200/60 focus:ring-blue-50 focus:border-[#1e88e5]'}`} 
                 />
               )}
-              {errors[field.id] && <p className="text-red-500 text-sm font-bold mt-2 animate-pulse">Este campo es obligatorio</p>}
+              {errors[field.id] && <p className="text-red-500 text-xs md:text-sm font-bold mt-1 md:mt-2 animate-pulse">Este campo es obligatorio</p>}
             </div>
           );
         })}
         
         {currentFields.length === 0 && (
-          <div className={`text-center py-12 rounded-[2rem] ${bgImage ? 'bg-white/95 backdrop-blur-md border border-white/40' : 'bg-white shadow-sm'}`}>
-            <p className="text-slate-600 text-lg">Esta página no tiene preguntas.</p>
+          <div className={`text-center py-10 md:py-12 rounded-[1.5rem] md:rounded-[2rem] ${bgImage ? 'bg-white/95 backdrop-blur-md border border-white/40' : 'bg-white shadow-sm'}`}>
+            <p className="text-slate-600 text-base md:text-lg">Esta página no tiene preguntas.</p>
           </div>
         )}
         
-        <div className={`p-8 flex gap-4 rounded-[2rem] ${bgImage ? 'bg-white/95 backdrop-blur-md border border-white/40 shadow-lg' : 'bg-white shadow-sm border border-slate-100'}`}>
+        <div className={`p-5 md:p-8 flex flex-col md:flex-row gap-3 md:gap-4 rounded-[1.5rem] md:rounded-[2rem] ${bgImage ? 'bg-white/95 backdrop-blur-md border border-white/40 shadow-lg' : 'bg-white shadow-sm border border-slate-100'}`}>
           {currentPage > 0 && (
             <button 
               onClick={() => setCurrentPage(prev => prev - 1)}
-              className="flex-1 bg-slate-50 border-2 border-slate-200/60 text-slate-700 hover:bg-slate-100 hover:border-slate-300 py-4 rounded-xl font-bold text-xl transition-all shadow-sm"
+              className="w-full md:flex-1 bg-slate-50 border-2 border-slate-200/60 text-slate-700 hover:bg-slate-100 hover:border-slate-300 py-3 md:py-4 rounded-xl font-bold text-lg md:text-xl transition-all shadow-sm order-2 md:order-1"
             >
               Atrás
             </button>
@@ -372,7 +446,7 @@ export default function PublicForm() {
           {currentPage < pages.length - 1 ? (
             <button 
               onClick={() => handleValidateAndProceed(false)}
-              className="flex-[2] bg-[#1e88e5] hover:bg-[#1565c0] text-white py-4 rounded-xl font-bold text-xl transition-all shadow-lg shadow-blue-500/30 hover:shadow-xl hover:-translate-y-1"
+              className="w-full md:flex-[2] bg-[#1e88e5] hover:bg-[#1565c0] text-white py-3 md:py-4 rounded-xl font-bold text-lg md:text-xl transition-all shadow-lg shadow-blue-500/30 hover:shadow-xl hover:-translate-y-1 order-1 md:order-2"
             >
               Siguiente
             </button>
@@ -380,7 +454,7 @@ export default function PublicForm() {
             <button 
               onClick={() => handleValidateAndProceed(true)}
               disabled={isSubmitting || submitSuccess}
-              className={`flex-[2] relative overflow-hidden group py-4 rounded-xl font-bold text-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 ${
+              className={`w-full md:flex-[2] relative overflow-hidden group py-3 md:py-4 rounded-xl font-bold text-lg md:text-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 order-1 md:order-2 ${
                 submitSuccess 
                   ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-emerald-500/40' 
                   : isSubmitting
@@ -415,8 +489,8 @@ export default function PublicForm() {
 
       {/* Footer del formulario (solo si no es pantalla de éxito) */}
       {!submitSuccess && settings.footerText && (
-        <div className={`p-8 text-center rounded-[2rem] border ${bgImage ? 'bg-black/40 backdrop-blur-md border-white/10 text-white/90 shadow-lg' : 'bg-slate-100/50 border-slate-200 text-slate-600 shadow-sm'}`}>
-           <p className="text-sm font-semibold tracking-wide" dangerouslySetInnerHTML={{ __html: settings.footerText }}></p>
+        <div className={`p-6 md:p-8 w-full max-w-3xl text-center rounded-[1.5rem] md:rounded-[2rem] border mt-6 relative z-10 ${bgImage ? 'bg-black/40 backdrop-blur-md border-white/10 text-white/90 shadow-lg' : 'bg-slate-100/50 border-slate-200 text-slate-600 shadow-sm'}`}>
+           <p className="text-xs md:text-sm font-semibold tracking-wide" dangerouslySetInnerHTML={{ __html: settings.footerText }}></p>
         </div>
       )}
     </div>

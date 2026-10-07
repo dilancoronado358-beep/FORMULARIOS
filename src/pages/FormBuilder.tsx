@@ -3,7 +3,17 @@ import { Type, AlignLeft, Hash, Calendar, CheckSquare, List, GripVertical, Setti
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 type Field = { id: string; type: string; label: string; placeholder: string; required: boolean };
-type FormDetails = { title: string; description: string; settings: { footerText: string; backgroundColor: string } };
+type FormDetails = { 
+  title: string; 
+  description: string; 
+  settings: { 
+    footerText: string; 
+    backgroundColor: string;
+    backgroundImage?: string;
+    expiresAt?: string;
+    maxResponses?: number;
+  } 
+};
 
 export default function FormBuilder() {
   const navigate = useNavigate();
@@ -620,7 +630,7 @@ export default function FormBuilder() {
             <div className="mt-8 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col gap-6 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-indigo-500 to-purple-500"></div>
               <h3 className="font-bold text-slate-800 flex items-center gap-2"><Palette className="w-5 h-5 text-indigo-500"/> Personalización del Formulario</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-bold text-slate-600 mb-2">Color de Fondo</label>
                   <div className="flex gap-2 items-center">
@@ -652,6 +662,28 @@ export default function FormBuilder() {
                     onChange={(e) => setFormDetails({...formDetails, settings: {...formDetails.settings, footerText: e.target.value}})}
                     className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-slate-700 font-medium transition-colors"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-600 mb-2">Fecha y Hora de Cierre</label>
+                  <input 
+                    type="datetime-local" 
+                    value={formDetails.settings.expiresAt || ''}
+                    onChange={(e) => setFormDetails({...formDetails, settings: {...formDetails.settings, expiresAt: e.target.value}})}
+                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-slate-700 font-medium transition-colors"
+                  />
+                  <p className="text-xs text-slate-400 mt-1">Dejar vacío para nunca cerrar</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-600 mb-2">Límite de Respuestas</label>
+                  <input 
+                    type="number" 
+                    min="1"
+                    placeholder="Ej. 100"
+                    value={formDetails.settings.maxResponses || ''}
+                    onChange={(e) => setFormDetails({...formDetails, settings: {...formDetails.settings, maxResponses: parseInt(e.target.value) || undefined}})}
+                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-slate-700 font-medium transition-colors"
+                  />
+                  <p className="text-xs text-slate-400 mt-1">Dejar vacío para ilimitadas</p>
                 </div>
               </div>
             </div>
