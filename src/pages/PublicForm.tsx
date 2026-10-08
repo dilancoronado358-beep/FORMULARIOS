@@ -38,14 +38,14 @@ export default function PublicForm() {
           }
 
           // Check Max Responses
-          if (!closed && data.settings?.maxResponses) {
+          if (!closed) {
              try {
                 const { count, error: countError } = await supabase
                   .from('form_responses')
                   .select('id', { count: 'exact', head: true })
                   .eq('form_id', data.id);
                   
-                const maxResponses = parseInt(data.settings.maxResponses);
+                const maxResponses = data.settings?.maxResponses ? parseInt(data.settings.maxResponses) : 40;
                 
                 // Fallback a localStorage si Supabase falla
                 let totalResponses = count || 0;
@@ -177,9 +177,16 @@ export default function PublicForm() {
       if (field.required && field.type !== 'html' && field.type !== 'section') {
         const val = responses[field.id];
         if (field.type === 'checkbox') {
-          if (!val || val.length === 0) {
-            newErrors[field.id] = true;
-            hasError = true;
+          if (field.allowMultiple === false) {
+             if (!val || String(val).trim() === '') {
+                newErrors[field.id] = true;
+                hasError = true;
+             }
+          } else {
+             if (!val || val.length === 0) {
+               newErrors[field.id] = true;
+               hasError = true;
+             }
           }
         } else {
           if (!val || String(val).trim() === '') {
@@ -202,6 +209,23 @@ export default function PublicForm() {
       // We do async inside an IIFE to not block
       (async () => {
         try {
+          // Custom Cedula validation (Carchi province)
+          let cedulaInvalid = false;
+          Object.entries(responses).forEach(([k, v]) => {
+            const field = fields.find((f: any) => f.id === k);
+            if (field && (field.label.toLowerCase().includes('cedula') || field.label.toLowerCase().includes('cédula'))) {
+              if (!String(v).trim().startsWith('04')) {
+                cedulaInvalid = true;
+              }
+            }
+          });
+          
+          if (cedulaInvalid) {
+             setSubmitError("Solo se permiten registros con cédulas que empiecen por '04' (Provincia del Carchi).");
+             setIsSubmitting(false);
+             return;
+          }
+
           const existing = JSON.parse(localStorage.getItem('rm_responses_list') || '[]');
           
           let inferredName = 'Anónimo';
@@ -215,24 +239,57 @@ export default function PublicForm() {
             }
           });
 
+          // Anti-bot check for example emails
+          if (inferredEmail.toLowerCase().includes('@example')) {
+             setSubmitError("No se permiten correos de prueba o bots. Por favor, ingresa un correo electrónico real.");
+             setIsSubmitting(false);
+             return;
+          }
+          
+          // Require email check
+          if (inferredEmail === 'No proporcionado') {
+             setSubmitError("El correo electrónico es obligatorio para el registro. Por favor, asegúrate de ingresar tu correo en el formulario.");
+             setIsSubmitting(false);
+             return;
+          }
+
+          // 0. Verificar Límite antes de guardar
+          try {
+             const { count } = await supabase
+               .from('form_responses')
+               .select('id', { count: 'exact', head: true })
+               .eq('form_id', form.id);
+             const maxResponses = form.settings?.maxResponses ? parseInt(form.settings.maxResponses) : 40;
+             if ((count || 0) >= maxResponses) {
+                setSubmitError("Lo sentimos, se acaba de alcanzar el límite máximo de respuestas para este formulario.");
+                setIsSubmitting(false);
+                return;
+             }
+          } catch(e) {
+             console.error("Error checking limit during submit:", e);
+          }
+
           // 1. Verificar Duplicados
           let isDuplicate = false;
           
           if (inferredEmail !== 'No proporcionado' || inferredName !== 'Anónimo') {
-            // Si hay datos personales, confiamos 100% en la base de datos (Supabase)
-            // Así, si el admin borró el registro, Supabase dirá que no existe y le permitirá registrarse
             try {
-              let query = supabase.from('form_responses').select('id').eq('form_id', form.id);
-              
               if (inferredEmail !== 'No proporcionado') {
-                query = query.ilike('user_email', inferredEmail);
-              } else if (inferredName !== 'Anónimo') {
-                query = query.ilike('user_name', inferredName);
+                const { data: emailCheck } = await supabase
+                  .from('form_responses')
+                  .select('id')
+                  .eq('form_id', form.id)
+                  .ilike('user_email', inferredEmail);
+                if (emailCheck && emailCheck.length > 0) isDuplicate = true;
               }
               
-              const { data: duplicateCheck, error: dupError } = await query;
-              if (duplicateCheck && duplicateCheck.length > 0) {
-                isDuplicate = true;
+              if (!isDuplicate && inferredName !== 'Anónimo') {
+                const { data: nameCheck } = await supabase
+                  .from('form_responses')
+                  .select('id')
+                  .eq('form_id', form.id)
+                  .ilike('user_name', inferredName);
+                if (nameCheck && nameCheck.length > 0) isDuplicate = true;
               }
             } catch(e) {
               console.error("Error checking duplicates:", e);
@@ -448,20 +505,28 @@ export default function PublicForm() {
               ) : field.type === 'checkbox' ? (
                 <div className="space-y-3 mt-2">
                   {(field.options && field.options.length > 0 ? field.options : ['Opción A', 'Opción B', 'Opción C']).filter((o: string) => o.trim() !== '').map((opt: string, i: number) => {
-                    const isChecked = (responses[field.id] || []).includes(opt);
+                    const isChecked = field.allowMultiple === false 
+                      ? responses[field.id] === opt 
+                      : (responses[field.id] || []).includes(opt);
+                      
                     return (
                       <label key={i} className={`flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition-colors bg-white/60 ${errors[field.id] ? 'border-red-200 hover:border-red-400 hover:bg-red-50/50' : 'border-slate-200/60 hover:border-[#1e88e5] hover:bg-blue-50/50'}`}>
                         <input 
-                          type="checkbox" 
+                          type={field.allowMultiple === false ? "radio" : "checkbox"} 
+                          name={`field-${field.id}`}
                           checked={isChecked}
                           onChange={(e) => {
-                            let curr = responses[field.id] || [];
-                            if (e.target.checked) curr = [...curr, opt];
-                            else curr = curr.filter((v: string) => v !== opt);
-                            setResponses(prev => ({ ...prev, [field.id]: curr }));
+                            if (field.allowMultiple === false) {
+                              setResponses(prev => ({ ...prev, [field.id]: opt }));
+                            } else {
+                              let curr = responses[field.id] || [];
+                              if (e.target.checked) curr = [...curr, opt];
+                              else curr = curr.filter((v: string) => v !== opt);
+                              setResponses(prev => ({ ...prev, [field.id]: curr }));
+                            }
                             if (errors[field.id]) setErrors(prev => ({ ...prev, [field.id]: false }));
                           }}
-                          className={`w-5 h-5 rounded ${errors[field.id] ? 'border-red-300 text-red-500 focus:ring-red-500' : 'border-slate-300 text-[#1e88e5] focus:ring-[#1e88e5]'}`} 
+                          className={`w-5 h-5 ${field.allowMultiple === false ? 'rounded-full' : 'rounded'} ${errors[field.id] ? 'border-red-300 text-red-500 focus:ring-red-500' : 'border-slate-300 text-[#1e88e5] focus:ring-[#1e88e5]'}`} 
                         />
                         <span className="text-sm md:text-base text-slate-800 font-medium">{opt}</span>
                       </label>

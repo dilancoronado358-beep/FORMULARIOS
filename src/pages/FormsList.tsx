@@ -71,13 +71,71 @@ export default function FormsList() {
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Mis Formularios</h1>
           <p className="text-slate-500 mt-1">Administra y analiza todos tus formularios ciudadanos.</p>
         </div>
-        <button 
-          onClick={() => navigate('/forms/new/builder')}
-          className="inline-flex items-center gap-2 bg-[#1e88e5] hover:bg-[#1565c0] text-white px-5 py-2.5 rounded-full font-semibold transition-all shadow-md hover:shadow-lg active:scale-95"
-        >
-          <Plus className="w-5 h-5" />
-          Crear Formulario
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={async () => {
+              if (!confirm("¿Deseas eliminar los registros duplicados y excedentes (dejando solo 40) en todos los formularios?")) return;
+              try {
+                for (const form of forms) {
+                  const { data } = await supabase.from('form_responses').select('id, user_name, user_email, created_at, data').eq('form_id', form.id).order('created_at', { ascending: true });
+                  if (!data) continue;
+                  const seen = new Set();
+                  const toDelete = [];
+                  let kept = 0;
+                  for (const r of data) {
+                    let startsWith04 = true;
+                    if (r.data) {
+                      Object.entries(r.data).forEach(([key, val]) => {
+                        if (key.toLowerCase().includes('cedula') || key.toLowerCase().includes('cédula')) {
+                           if (!String(val).trim().startsWith('04')) startsWith04 = false;
+                        }
+                      });
+                    }
+
+                    const normName = (r.user_name || 'anónimo').toLowerCase().trim();
+                    const normEmail = (r.user_email || 'no proporcionado').toLowerCase().trim();
+                    
+                    const isBot = normEmail.includes('@example');
+                    const isNoEmail = normEmail === 'no proporcionado';
+
+                    if (!startsWith04 || isBot || isNoEmail) {
+                      toDelete.push(r.id);
+                    } else if ((normName !== 'anónimo' && seen.has('n:'+normName)) || (normEmail !== 'no proporcionado' && seen.has('e:'+normEmail))) {
+                      toDelete.push(r.id);
+                    } else {
+                      if (kept < 40) {
+                        if (normName !== 'anónimo') seen.add('n:'+normName);
+                        if (normEmail !== 'no proporcionado') seen.add('e:'+normEmail);
+                        kept++;
+                      } else {
+                        toDelete.push(r.id);
+                      }
+                    }
+                  }
+                  if (toDelete.length > 0) {
+                    for (let i = 0; i < toDelete.length; i += 50) {
+                      await supabase.from('form_responses').delete().in('id', toDelete.slice(i, i+50));
+                    }
+                  }
+                }
+                alert("¡Limpieza completada! Se eliminaron los excedentes.");
+                window.location.reload();
+              } catch(e: any) {
+                alert("Error limpiando: " + e.message);
+              }
+            }}
+            className="inline-flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-full font-semibold transition-all shadow-md hover:shadow-lg active:scale-95"
+          >
+            Limpiar Excedentes
+          </button>
+          <button 
+            onClick={() => navigate('/forms/new/builder')}
+            className="inline-flex items-center gap-2 bg-[#1e88e5] hover:bg-[#1565c0] text-white px-5 py-2.5 rounded-full font-semibold transition-all shadow-md hover:shadow-lg active:scale-95"
+          >
+            <Plus className="w-5 h-5" />
+            Crear Formulario
+          </button>
+        </div>
       </div>
 
       {forms.length === 0 ? (

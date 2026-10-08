@@ -601,9 +601,9 @@ export default function FormBuilder() {
                           </div>
                         ) : field.type === 'checkbox' ? (
                           <div className="space-y-3 mt-2">
-                            {(field.options && field.options.length > 0 ? field.options : ['Opción A', 'Opción B', 'Opción C']).filter(o => o.trim() !== '').map((opt, i) => (
+                            {(field.options && field.options.length > 0 ? field.options : ['Opción A', 'Opción B', 'Opción C']).filter((o: string) => o.trim() !== '').map((opt: string, i: number) => (
                               <div key={i} className="flex items-center gap-3 p-3 border-2 border-slate-100 rounded-xl bg-slate-50 opacity-70">
-                                <div className="w-5 h-5 rounded border-2 border-slate-300"></div>
+                                <div className={`w-5 h-5 border-2 border-slate-300 ${field.allowMultiple === false ? 'rounded-full' : 'rounded'}`}></div>
                                 <span className="text-slate-500 font-medium">{opt}</span>
                               </div>
                             ))}
@@ -750,6 +750,23 @@ export default function FormBuilder() {
                       placeholder="Opción A&#10;Opción B&#10;Opción C"
                     />
                     <p className="text-xs text-slate-500 mt-2 font-medium">Presiona <strong>Enter</strong> para agregar una nueva opción a la lista.</p>
+                  </div>
+                )}
+
+                {activeField.type === 'checkbox' && (
+                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <label className="text-sm font-semibold text-slate-700 cursor-pointer select-none" htmlFor="multi-toggle">Permitir selección múltiple</label>
+                    <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                      <input 
+                        type="checkbox" 
+                        id="multi-toggle" 
+                        checked={activeField.allowMultiple !== false}
+                        onChange={(e) => updateActiveField({ allowMultiple: e.target.checked })}
+                        className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer transition-transform duration-200 ease-in-out checked:translate-x-5 checked:border-rm-azul"
+                        style={{ borderColor: activeField.allowMultiple !== false ? '#1E3A8A' : '#CBD5E1', backgroundColor: 'white' }}
+                      />
+                      <label htmlFor="multi-toggle" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer transition-colors duration-200 ease-in-out ${activeField.allowMultiple !== false ? 'bg-rm-azul' : 'bg-slate-300'}`}></label>
+                    </div>
                   </div>
                 )}
 
