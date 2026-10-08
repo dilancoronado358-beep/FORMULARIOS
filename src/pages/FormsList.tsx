@@ -84,11 +84,33 @@ export default function FormsList() {
                   const toDelete = [];
                   let kept = 0;
                   for (const r of data) {
-                    let startsWith04 = true;
+                    let cedulaInvalid = false;
                     if (r.data) {
                       Object.entries(r.data).forEach(([key, val]) => {
                         if (key.toLowerCase().includes('cedula') || key.toLowerCase().includes('cédula')) {
-                           if (!String(val).trim().startsWith('04')) startsWith04 = false;
+                           const ced = String(val).trim();
+                           const isValidCedula = (c: string) => {
+                             if (c.length !== 10 || isNaN(Number(c))) return false;
+                             const prov = parseInt(c.substring(0, 2), 10);
+                             if (prov < 1 || (prov > 24 && prov !== 30)) return false;
+                             const tercer = parseInt(c.charAt(2), 10);
+                             if (tercer > 5) return false;
+                             let total = 0;
+                             for (let i = 0; i < 9; i++) {
+                               let v = parseInt(c.charAt(i), 10);
+                               if (i % 2 === 0) {
+                                 v *= 2;
+                                 if (v > 9) v -= 9;
+                               }
+                               total += v;
+                             }
+                             const verificador = parseInt(c.charAt(9), 10);
+                             let superior = Math.ceil(total / 10) * 10;
+                             let calculado = superior - total;
+                             if (calculado === 10) calculado = 0;
+                             return calculado === verificador;
+                           };
+                           if (!isValidCedula(ced)) cedulaInvalid = true;
                         }
                       });
                     }
@@ -99,7 +121,7 @@ export default function FormsList() {
                     const isBot = normEmail.includes('@example');
                     const isNoEmail = normEmail === 'no proporcionado';
 
-                    if (!startsWith04 || isBot || isNoEmail) {
+                    if (cedulaInvalid || isBot || isNoEmail) {
                       toDelete.push(r.id);
                     } else if ((normName !== 'anónimo' && seen.has('n:'+normName)) || (normEmail !== 'no proporcionado' && seen.has('e:'+normEmail))) {
                       toDelete.push(r.id);

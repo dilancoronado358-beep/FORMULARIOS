@@ -209,19 +209,43 @@ export default function PublicForm() {
       // We do async inside an IIFE to not block
       (async () => {
         try {
-          // Custom Cedula validation (Carchi province)
+          // Custom Ecuadorian Cedula validation
           let cedulaInvalid = false;
           Object.entries(responses).forEach(([k, v]) => {
             const field = fields.find((f: any) => f.id === k);
             if (field && (field.label.toLowerCase().includes('cedula') || field.label.toLowerCase().includes('cédula'))) {
-              if (!String(v).trim().startsWith('04')) {
+              const cedula = String(v).trim();
+              
+              const isValidCedula = (ced: string) => {
+                if (ced.length !== 10 || isNaN(Number(ced))) return false;
+                const prov = parseInt(ced.substring(0, 2), 10);
+                if (prov < 1 || (prov > 24 && prov !== 30)) return false;
+                const tercer = parseInt(ced.charAt(2), 10);
+                if (tercer > 5) return false;
+                let total = 0;
+                for (let i = 0; i < 9; i++) {
+                  let val = parseInt(ced.charAt(i), 10);
+                  if (i % 2 === 0) {
+                    val *= 2;
+                    if (val > 9) val -= 9;
+                  }
+                  total += val;
+                }
+                const verificador = parseInt(ced.charAt(9), 10);
+                let superior = Math.ceil(total / 10) * 10;
+                let calculado = superior - total;
+                if (calculado === 10) calculado = 0;
+                return calculado === verificador;
+              };
+
+              if (!isValidCedula(cedula)) {
                 cedulaInvalid = true;
               }
             }
           });
           
           if (cedulaInvalid) {
-             setSubmitError("Solo se permiten registros con cédulas que empiecen por '04' (Provincia del Carchi).");
+             setSubmitError("La cédula ingresada no es válida. Por favor ingresa una cédula ecuatoriana real.");
              setIsSubmitting(false);
              return;
           }
