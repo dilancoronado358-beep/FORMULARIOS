@@ -66,11 +66,13 @@ export default function FormsList() {
   };
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto animate-in fade-in duration-700 relative">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-8 max-w-7xl mx-auto animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Mis Formularios</h1>
-          <p className="text-slate-500 mt-1">Administra y analiza todos tus formularios ciudadanos.</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            Mis Formularios <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-500 text-xs font-mono border border-slate-200">{forms.length}</span>
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">Administra y analiza todos tus formularios ciudadanos.</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -159,104 +161,99 @@ export default function FormsList() {
                 alert("Error limpiando: " + e.message);
               }
             }}
-            className="inline-flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-full font-semibold transition-all shadow-md hover:shadow-lg active:scale-95"
+            className="inline-flex items-center gap-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"
           >
+            <Trash2 className="w-4 h-4" />
             Limpiar Excedentes
           </button>
           <button 
             onClick={() => navigate('/forms/new/builder')}
-            className="inline-flex items-center gap-2 bg-[#1e88e5] hover:bg-[#1565c0] text-white px-5 py-2.5 rounded-full font-semibold transition-all shadow-md hover:shadow-lg active:scale-95"
+            className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-md text-sm font-medium transition-all shadow-sm active:scale-95 border border-slate-700"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4" />
             Crear Formulario
           </button>
         </div>
       </div>
 
       {forms.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center p-16 text-center">
-          <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6">
-            <LayoutTemplate className="w-12 h-12 text-[#1e88e5]" />
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 flex flex-col items-center justify-center p-16 text-center">
+          <div className="w-16 h-16 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center mb-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+            <LayoutTemplate className="w-8 h-8 text-slate-400" />
           </div>
-          <h3 className="text-2xl font-bold text-slate-900 mb-2">No tienes formularios</h3>
-          <p className="text-slate-500 max-w-md mx-auto mb-8 text-lg">
+          <h3 className="text-lg font-bold text-slate-900 mb-2">No tienes formularios</h3>
+          <p className="text-sm text-slate-500 max-w-md mx-auto mb-8">
             Aún no has creado ningún formulario. Comienza ahora a recolectar información y participación ciudadana.
           </p>
           <button 
             onClick={() => navigate('/forms/new/builder')}
-            className="inline-flex items-center gap-2 bg-[#1e88e5] hover:bg-[#1565c0] text-white px-8 py-3 rounded-full font-bold text-lg transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-md font-medium text-sm transition-all shadow-sm active:scale-95 border border-slate-700"
           >
-            <Plus className="w-6 h-6" />
+            <Plus className="w-4 h-4" />
             Crear tu primer formulario
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {forms.map((form) => (
-            <div key={form.id} className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 hover:-translate-y-1.5 group flex flex-col h-full relative">
+            <div key={form.id} className="bg-white rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.04)] border border-slate-200 overflow-hidden hover:border-slate-300 transition-colors group flex flex-col h-full">
               
-              {/* Header de la Tarjeta */}
-              <div className="h-40 bg-gradient-to-br from-[#1e88e5] to-[#1565c0] p-6 flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
-                
-                <div className="flex justify-between items-start relative z-10">
-                  <div className="p-2.5 bg-white/20 backdrop-blur-sm rounded-xl text-white">
-                    <LayoutTemplate className="w-6 h-6" />
+              <div className="p-5 flex-1 flex flex-col relative">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-8 h-8 rounded bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 shadow-sm">
+                    <LayoutTemplate className="w-4 h-4" />
                   </div>
-                  <div className="px-3 py-1 rounded-full text-xs font-black bg-emerald-400 text-emerald-950 shadow-sm shadow-emerald-900/20 uppercase tracking-widest flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-950 animate-pulse"></div>
+                  <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded text-[10px] font-semibold text-emerald-700 uppercase tracking-wider">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                     Activo
                   </div>
                 </div>
 
-                <div className="relative z-10 mt-4">
-                  <h3 className="font-extrabold text-2xl text-white line-clamp-1 leading-tight">{form.title}</h3>
-                </div>
-              </div>
-
-              {/* Cuerpo de la Tarjeta */}
-              <div className="p-6 flex-1 flex flex-col bg-white">
-                <p className="text-sm font-medium text-slate-400 mb-6 flex items-center gap-2">
-                  <Calendar className="w-4 h-4" /> Creado: {form.date}
+                <h3 className="font-semibold text-lg text-slate-900 line-clamp-1 mb-1 group-hover:text-slate-700 transition-colors cursor-pointer" onClick={() => navigate(`/forms/edit/${form.id}`)}>{form.title}</h3>
+                
+                <p className="text-xs text-slate-500 flex items-center gap-1.5 mb-6">
+                  <Calendar className="w-3.5 h-3.5" /> Creado: {form.date}
                 </p>
                 
-                <div className="mt-auto bg-slate-50/80 rounded-2xl p-5 border border-slate-100 flex items-center justify-between">
+                <div className="mt-auto bg-slate-50/50 rounded-md p-4 border border-slate-100 flex items-center justify-between group-hover:bg-slate-50 transition-colors">
                   <div>
-                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Respuestas</span>
-                    <span className="text-3xl font-black text-[#1e88e5] leading-none">{form.responses}</span>
+                    <span className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Respuestas Totales</span>
+                    <span className="text-2xl font-bold text-slate-900 leading-none">{form.responses}</span>
                   </div>
-                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-[#1e88e5]">
-                    <BarChart2 className="w-6 h-6" />
+                  <div className="text-slate-300 group-hover:text-slate-400 transition-colors">
+                    <BarChart2 className="w-5 h-5" />
                   </div>
                 </div>
               </div>
 
-              {/* Pie de la Tarjeta (Acciones) */}
-              <div className="grid grid-cols-4 border-t border-slate-50 bg-slate-50/50 p-2 gap-1">
+              <div className="grid grid-cols-4 border-t border-slate-100 bg-slate-50/30">
                 <button 
                   onClick={() => navigate(`/forms/edit/${form.id}`)}
                   title="Editar" 
-                  className="flex items-center justify-center py-3 text-slate-400 hover:text-[#1e88e5] hover:bg-white rounded-xl transition-all font-medium text-sm group/btn"
+                  className="flex flex-col items-center justify-center py-3 text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors border-r border-slate-100"
                 >
-                  <Edit2 className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                  <Edit2 className="w-4 h-4" />
                 </button>
-                <button title="Analíticas" className="flex items-center justify-center py-3 text-slate-400 hover:text-emerald-600 hover:bg-white rounded-xl transition-all font-medium text-sm group/btn">
-                  <BarChart2 className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                <button 
+                  onClick={() => navigate('/stats')}
+                  title="Analíticas" 
+                  className="flex flex-col items-center justify-center py-3 text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors border-r border-slate-100"
+                >
+                  <BarChart2 className="w-4 h-4" />
                 </button>
                 <button 
                   onClick={() => setShareModal(form.id)}
                   title="Compartir y QR" 
-                  className="flex items-center justify-center py-3 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-xl transition-all font-medium text-sm group/btn"
+                  className="flex flex-col items-center justify-center py-3 text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors border-r border-slate-100"
                 >
-                  <Share2 className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                  <Share2 className="w-4 h-4" />
                 </button>
                 <button 
                   onClick={() => handleDelete(form.id)}
                   title="Eliminar" 
-                  className="flex items-center justify-center py-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all font-medium text-sm group/btn"
+                  className="flex flex-col items-center justify-center py-3 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                 >
-                  <Trash2 className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -337,22 +334,22 @@ function ShareModal({ shareModal, setShareModal }: { shareModal: string, setShar
   }, [publicLink]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-      <div className="bg-white rounded-[2rem] shadow-2xl max-w-sm w-full p-8 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#1565c0] to-[#059669]"></div>
-        <button 
-          onClick={() => setShareModal(null)}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-full p-2 transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-sm w-full p-6 relative">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+          <h3 className="text-lg font-bold text-slate-900">Compartir Formulario</h3>
+          <button 
+            onClick={() => setShareModal(null)}
+            className="p-1.5 text-slate-400 hover:text-slate-700 bg-white hover:bg-slate-100 rounded-md transition-colors border border-transparent hover:border-slate-200"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
         
-        <h3 className="text-2xl font-black text-slate-800 mb-6 text-center mt-2">Compartir Formulario</h3>
-        
-        <div className="flex flex-col items-center justify-center mb-8">
-          <div className="p-4 border-4 border-slate-50 rounded-3xl bg-white mb-6 shadow-xl shadow-blue-500/10 transform hover:scale-105 transition-transform">
-            <div id="qr-canvas-container" className="w-[250px] h-[250px] flex items-center justify-center bg-slate-50 rounded-xl overflow-hidden">
-              <div className="w-8 h-8 border-4 border-[#1e88e5] border-t-transparent rounded-full animate-spin"></div>
+        <div className="flex flex-col items-center justify-center mb-6">
+          <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 mb-6 shadow-sm">
+            <div id="qr-canvas-container" className="w-[250px] h-[250px] flex items-center justify-center bg-white rounded-lg overflow-hidden border border-slate-100">
+              <div className="w-6 h-6 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
             </div>
           </div>
           
@@ -364,31 +361,31 @@ function ShareModal({ shareModal, setShareModal }: { shareModal: string, setShar
                 alert("El código QR aún se está generando. Por favor espera un momento.");
               }
             }}
-            className="w-full bg-gradient-to-r from-[#1565c0] to-[#1e88e5] hover:from-[#0d47a1] hover:to-[#1565c0] text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-xl hover:-translate-y-1 transition-all mb-6"
+            className="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 px-4 rounded-md text-sm transition-colors shadow-sm"
           >
-            Descargar QR Premium
+            Descargar Código QR
           </button>
         </div>
 
         {/* Input con el Enlace Público */}
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">Enlace Público</label>
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Enlace Público</label>
           <div className="flex items-center gap-2">
             <input 
               type="text" 
               readOnly 
               value={publicLink}
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2.5 px-3 text-sm text-slate-600 focus:outline-none"
+              className="w-full bg-white border border-slate-200 rounded-md py-2 px-3 text-sm text-slate-600 focus:outline-none focus:border-slate-400 focus:ring-0 transition-colors shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
             />
             <button 
               onClick={() => {
                 navigator.clipboard.writeText(publicLink);
                 alert("¡Enlace copiado al portapapeles!");
               }}
-              className="p-2.5 bg-[#1e88e5] text-white rounded-lg hover:bg-[#1565c0] transition-colors shrink-0"
+              className="p-2 bg-white border border-slate-200 text-slate-600 rounded-md hover:bg-slate-50 transition-colors shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
               title="Copiar al portapapeles"
             >
-              <Copy className="w-5 h-5" />
+              <Copy className="w-4 h-4" />
             </button>
           </div>
         </div>

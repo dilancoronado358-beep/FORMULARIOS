@@ -153,6 +153,8 @@ export default function PublicForm() {
   const fields = form.fields || settings.fields || [];
   const bgColor = settings.backgroundColor || '#F8FAFC';
   const bgImage = settings.backgroundImage || null;
+  const primaryColor = settings.primaryColor || '#1e88e5';
+  const bannerImage = settings.bannerImage || null;
   
   // Dividir en páginas usando secciones
   const pages: any[][] = [];
@@ -488,8 +490,8 @@ export default function PublicForm() {
               bgImage ? 'bg-white/40 backdrop-blur-md' : 'bg-slate-200'
             }`}>
               <div 
-                className="h-full bg-[#1e88e5] transition-all duration-500 ease-out"
-                style={{ width: `${progress}%` }}
+                className="h-full transition-all duration-500 ease-out"
+                style={{ width: `${progress}%`, backgroundColor: primaryColor }}
               ></div>
             </div>
           </div>
@@ -539,13 +541,23 @@ export default function PublicForm() {
             )}
 
             {currentPage === 0 && (
-              <div className={`rounded-[2rem] border-t-[8px] md:border-t-[12px] border-[#1e88e5] shadow-xl p-6 md:p-10 flex flex-col items-center transition-colors relative overflow-hidden ${
+              <div className={`rounded-[2rem] shadow-xl flex flex-col items-center transition-colors relative overflow-hidden ${
                 bgImage ? 'bg-white/95 backdrop-blur-xl border border-white/40' : 'bg-white'
-              }`}>
+              }`} style={{ borderTop: `12px solid ${primaryColor}` }}>
                 <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
-                <img src="https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png" alt="Logo" className="h-16 md:h-20 object-contain mb-4 md:mb-6 drop-shadow-md relative z-10" />
-                <h1 className="text-2xl md:text-4xl font-black text-slate-900 relative z-10 text-center">{title}</h1>
-                <p className="text-slate-600 mt-3 md:mt-4 text-base md:text-lg max-w-2xl font-medium relative z-10 text-center">{description}</p>
+                
+                {bannerImage ? (
+                  <img src={bannerImage} alt="Banner" className="w-full h-48 md:h-64 object-cover mb-6 md:mb-8 relative z-10" />
+                ) : (
+                  <div className="pt-6 md:pt-10">
+                    <img src="https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png" alt="Logo" className="h-16 md:h-20 object-contain mb-4 md:mb-6 drop-shadow-md relative z-10" />
+                  </div>
+                )}
+                
+                <div className="px-6 md:px-10 pb-6 md:pb-10 w-full flex flex-col items-center">
+                  <h1 className="text-2xl md:text-4xl font-black text-slate-900 relative z-10 text-center">{title}</h1>
+                  <p className="text-slate-600 mt-3 md:mt-4 text-base md:text-lg max-w-2xl font-medium relative z-10 text-center">{description}</p>
+                </div>
               </div>
             )}
             
@@ -746,7 +758,8 @@ export default function PublicForm() {
           {currentPage < pages.length - 1 ? (
             <button 
               onClick={() => handleValidateAndProceed(false)}
-              className="w-full md:flex-[2] bg-[#1e88e5] hover:bg-[#1565c0] text-white py-3 md:py-4 rounded-xl font-bold text-lg md:text-xl transition-all shadow-lg shadow-blue-500/30 hover:shadow-xl hover:-translate-y-1 order-1 md:order-2"
+              className="w-full md:flex-[2] text-white py-3 md:py-4 rounded-xl font-bold text-lg md:text-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 order-1 md:order-2 hover:brightness-110"
+              style={{ backgroundColor: primaryColor }}
             >
               Siguiente
             </button>
@@ -758,9 +771,10 @@ export default function PublicForm() {
                 submitSuccess 
                   ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-emerald-500/40' 
                   : isSubmitting
-                    ? 'bg-gradient-to-r from-[#1e88e5] to-[#1565c0] text-white opacity-80 cursor-wait'
+                    ? 'text-white opacity-80 cursor-wait'
                     : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-400 hover:to-teal-400 shadow-emerald-500/30'
               }`}
+              style={isSubmitting && !submitSuccess ? { backgroundColor: primaryColor } : {}}
             >
               <div className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
               <div className="relative flex items-center justify-center gap-2">

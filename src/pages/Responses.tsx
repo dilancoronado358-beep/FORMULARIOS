@@ -134,35 +134,35 @@ export default function Responses() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 animate-fade-in relative">
-      <div className="flex items-center justify-between">
+    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 drop-shadow-sm">Bandeja de Respuestas</h1>
-          <p className="text-slate-500 mt-2 text-lg">Visualiza y exporta la información recopilada de tus formularios.</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">Bandeja de Respuestas</h1>
+          <p className="text-sm text-slate-500 mt-1">Visualiza y exporta la información recopilada de tus formularios.</p>
         </div>
-        <button onClick={exportCSV} className="flex items-center gap-2 bg-[#1e88e5] text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:-translate-y-1 hover:shadow-xl transition-all">
-          <Download className="w-5 h-5" /> Exportar CSV
+        <button onClick={exportCSV} className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-md text-sm font-medium transition-all shadow-sm active:scale-95 border border-slate-700">
+          <Download className="w-4 h-4" /> Exportar CSV
         </button>
       </div>
 
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden">
         {/* Toolbar */}
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <div className="relative w-96">
-            <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+        <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between bg-slate-50/50 gap-4">
+          <div className="relative w-full sm:w-96">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input 
               type="text"
               placeholder="Buscar por nombre, correo o formulario..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#1e88e5] focus:ring-4 focus:ring-blue-50 outline-none transition-all"
+              className="w-full pl-9 pr-4 py-2 rounded-md border border-slate-200 focus:border-slate-400 focus:ring-0 outline-none text-sm transition-colors"
             />
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <select 
               value={selectedFormFilter}
               onChange={(e) => setSelectedFormFilter(e.target.value)}
-              className="px-4 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-semibold focus:border-[#1e88e5] outline-none transition-all cursor-pointer bg-white"
+              className="px-3 py-2 rounded-md border border-slate-200 text-slate-600 text-sm font-medium focus:border-slate-400 outline-none transition-colors bg-white w-full sm:w-auto"
             >
               <option value="">Todos los formularios</option>
               {Array.from(new Set(responses.map(r => r.formName))).map((formName, i) => (
@@ -170,56 +170,55 @@ export default function Responses() {
               ))}
             </select>
             
-            <button className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-semibold hover:border-slate-300 hover:bg-slate-50 transition-all">
-              <Filter className="w-5 h-5" /> Filtros avanzados
+            <button className="flex items-center gap-2 px-3 py-2 rounded-md border border-slate-200 text-slate-600 font-medium text-sm hover:border-slate-300 hover:bg-white transition-colors bg-white shadow-sm whitespace-nowrap">
+              <Filter className="w-4 h-4" /> Filtros
             </button>
           </div>
         </div>
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="bg-slate-50 text-slate-500 text-sm font-bold uppercase tracking-wider">
-                <th className="p-6 border-b border-slate-100">ID</th>
-                <th className="p-6 border-b border-slate-100">Remitente</th>
-                <th className="p-6 border-b border-slate-100">Formulario</th>
-                <th className="p-6 border-b border-slate-100">Fecha</th>
-                <th className="p-6 border-b border-slate-100">Estado</th>
-                <th className="p-6 border-b border-slate-100 text-right">Acciones</th>
+              <tr className="bg-slate-50 text-slate-500 border-b border-slate-200">
+                <th className="px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">ID</th>
+                <th className="px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Remitente</th>
+                <th className="px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Formulario</th>
+                <th className="px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Fecha</th>
+                <th className="px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Estado</th>
+                <th className="px-6 py-3 font-semibold uppercase tracking-wider text-[10px] text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {filteredResponses.map((res) => (
-                <tr key={res.id} className="hover:bg-blue-50/50 transition-colors group">
-                  <td className="p-6 border-b border-slate-100 text-slate-500 font-medium">#{res.id.padStart(4, '0')}</td>
-                  <td className="p-6 border-b border-slate-100">
+                <tr key={res.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <td className="px-6 py-4 font-mono text-xs text-slate-500">#{res.id.substring(0,8)}</td>
+                  <td className="px-6 py-4">
                     <div className="flex flex-col">
-                      <span className="font-bold text-slate-800">{res.user}</span>
-                      <span className="text-sm text-slate-500">{res.email}</span>
+                      <span className="font-semibold text-slate-900">{res.user}</span>
+                      <span className="text-xs text-slate-500">{res.email}</span>
                     </div>
                   </td>
-                  <td className="p-6 border-b border-slate-100 font-semibold text-slate-700">
+                  <td className="px-6 py-4 font-medium text-slate-700">
                     <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-[#1e88e5]" />
-                      {res.formName}
+                      <FileText className="w-3.5 h-3.5 text-slate-400" />
+                      <span className="truncate max-w-[200px]">{res.formName}</span>
                     </div>
                   </td>
-                  <td className="p-6 border-b border-slate-100 text-slate-600 font-medium">{res.date}</td>
-                  <td className="p-6 border-b border-slate-100">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      res.status === 'Completado' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                    }`}>
-                      {res.status}
-                    </span>
+                  <td className="px-6 py-4 text-slate-500 font-mono text-xs">{res.date}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-1.5 bg-white border border-slate-200 px-2 py-0.5 rounded-full w-fit shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                      <div className={`w-1.5 h-1.5 rounded-full ${res.status === 'Completado' ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
+                      <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider">{res.status}</span>
+                    </div>
                   </td>
-                  <td className="p-6 border-b border-slate-100 text-right">
+                  <td className="px-6 py-4 text-right">
                     <div className="flex justify-end items-center gap-2">
-                      <button onClick={() => setViewResponse(res)} className="p-2 text-[#1e88e5] bg-blue-50 hover:bg-[#1e88e5] hover:text-white rounded-lg transition-colors font-bold text-sm px-4">
+                      <button onClick={() => setViewResponse(res)} className="px-3 py-1.5 text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-md transition-colors font-medium text-xs shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                         Ver detalle
                       </button>
-                      <button onClick={() => handleDeleteResponse(res.id)} title="Eliminar respuesta" className="p-2 text-red-500 bg-red-50 hover:bg-red-500 hover:text-white rounded-lg transition-colors">
-                        <Trash2 className="w-5 h-5" />
+                      <button onClick={() => handleDeleteResponse(res.id)} title="Eliminar respuesta" className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </td>
@@ -229,8 +228,8 @@ export default function Responses() {
           </table>
           
           {filteredResponses.length === 0 && (
-            <div className="p-12 text-center text-slate-500">
-              No se encontraron respuestas.
+            <div className="p-12 text-center text-slate-500 text-sm">
+              No se encontraron respuestas que coincidan con la búsqueda.
             </div>
           )}
         </div>
@@ -238,45 +237,46 @@ export default function Responses() {
 
       {/* View Response Modal */}
       {viewResponse && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2rem] w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl animate-scale-up border border-slate-200 overflow-hidden">
-            <div className="p-8 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="p-6 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-black text-slate-800">Respuesta: {viewResponse.formName}</h2>
-                <p className="text-slate-500 mt-1 font-medium">De: {viewResponse.user} • {viewResponse.date}</p>
+                <h2 className="text-lg font-bold text-slate-900 line-clamp-1">{viewResponse.formName}</h2>
+                <p className="text-xs text-slate-500 mt-1 font-medium flex items-center gap-2">
+                  <span>{viewResponse.user}</span>
+                  <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                  <span className="font-mono">{viewResponse.date}</span>
+                </p>
               </div>
               <button 
                 onClick={() => setViewResponse(null)}
-                className="p-3 bg-white hover:bg-slate-200 text-slate-500 hover:text-slate-700 rounded-full transition-colors border border-slate-200 shadow-sm"
+                className="p-2 text-slate-400 hover:text-slate-700 bg-white hover:bg-slate-100 rounded-md transition-colors border border-slate-200 shadow-sm"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
             
-            <div className="p-8 overflow-y-auto bg-white flex-1">
-              <div className="space-y-8">
+            <div className="p-6 overflow-y-auto bg-slate-50/30 flex-1">
+              <div className="space-y-4">
                 {(() => {
                   let orderedFields: { label: string, answer: any }[] = [];
                   
                   if (viewResponse.formFields && viewResponse.formFields.length > 0) {
-                    // Obtener los campos en orden original, excluyendo html y section
                     orderedFields = viewResponse.formFields
                       .filter((f: any) => f.type !== 'html' && f.type !== 'section')
                       .map((f: any) => {
-                        // Buscar la respuesta usando el label o el id
                         let answer = viewResponse.data[f.label];
                         if (answer === undefined) answer = viewResponse.data[f.id];
                         return { label: f.label, answer, type: f.type };
                       })
                       .filter((f: any) => f.answer !== undefined && f.answer !== null);
                   } else {
-                    // Fallback si por alguna razón no tenemos formFields
                     orderedFields = Object.entries(viewResponse.data || {}).map(([key, value]) => ({ label: key, answer: value, type: 'text' }));
                   }
 
                   if (orderedFields.length === 0) {
                     return (
-                      <div className="text-center text-slate-500 py-8">
+                      <div className="text-center text-slate-500 py-8 text-sm">
                         Esta respuesta no contiene datos.
                       </div>
                     );
@@ -286,17 +286,17 @@ export default function Responses() {
                     const isFile = field.type === 'file' || field.type === 'image' || (typeof field.answer === 'string' && field.answer.startsWith('http'));
                     
                     return (
-                      <div key={i} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
-                        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">{field.label}</h3>
+                      <div key={i} className="bg-white rounded-lg p-5 border border-slate-200 shadow-sm flex flex-col gap-1.5">
+                        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{field.label}</h3>
                         {isFile ? (
-                          <div className="mt-2">
-                            <a href={field.answer} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 bg-blue-100 text-[#1e88e5] hover:bg-[#1e88e5] hover:text-white px-4 py-2 rounded-lg font-bold text-sm transition-colors">
-                              <FileText className="w-4 h-4" />
-                              Ver / Descargar Archivo
+                          <div className="mt-1">
+                            <a href={field.answer} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 bg-slate-900 text-white hover:bg-slate-800 px-3 py-1.5 rounded-md font-medium text-xs transition-colors shadow-sm">
+                              <FileText className="w-3.5 h-3.5" />
+                              Ver Archivo Adjunto
                             </a>
                           </div>
                         ) : (
-                          <p className="text-lg font-medium text-slate-800 break-words whitespace-pre-wrap">
+                          <p className="text-sm font-medium text-slate-900 break-words whitespace-pre-wrap">
                             {Array.isArray(field.answer) ? field.answer.join(', ') : field.answer || '-'}
                           </p>
                         )}
@@ -306,7 +306,7 @@ export default function Responses() {
                 })()}
 
                 {Object.keys(viewResponse.data || {}).length === 0 && (
-                  <div className="text-center text-slate-500 py-8">
+                  <div className="text-center text-slate-500 py-8 text-sm">
                     Esta respuesta no contiene datos.
                   </div>
                 )}

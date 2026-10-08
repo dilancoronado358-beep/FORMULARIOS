@@ -10,6 +10,8 @@ type FormDetails = {
     footerText: string; 
     backgroundColor: string;
     backgroundImage?: string;
+    primaryColor?: string;
+    bannerImage?: string;
     expiresAt?: string;
     maxResponses?: number;
   } 
@@ -31,12 +33,12 @@ export default function FormBuilder() {
   });
 
   const [formDetails, setFormDetails] = useState<FormDetails>(() => {
-    if (id) return { title: '', description: '', settings: { footerText: '', backgroundColor: '#F8FAFC' } };
+    if (id) return { title: '', description: '', settings: { footerText: '', backgroundColor: '#F8FAFC', primaryColor: '#1e88e5' } };
     const saved = localStorage.getItem('rm_builder_details');
     return saved ? JSON.parse(saved) : { 
       title: 'Participación Ciudadana', 
       description: 'Queremos conocer tus ideas...',
-      settings: { footerText: '', backgroundColor: '#F8FAFC' }
+      settings: { footerText: '', backgroundColor: '#F8FAFC', primaryColor: '#1e88e5' }
     };
   });
 
@@ -55,7 +57,7 @@ export default function FormBuilder() {
             setFormDetails({
               title: data.title || '',
               description: data.description || '',
-              settings: data.settings || { footerText: '', backgroundColor: '#F8FAFC' }
+              settings: data.settings || { footerText: '', backgroundColor: '#F8FAFC', primaryColor: '#1e88e5' }
             });
           }
         } catch (e) {
@@ -288,13 +290,23 @@ export default function FormBuilder() {
         <div className="w-full max-w-3xl flex flex-col relative z-10 space-y-6">
           
           {currentPreviewPage === 0 && (
-            <div className={`rounded-[2rem] border-t-[12px] border-[#1e88e5] shadow-xl p-10 flex flex-col items-center transition-colors relative overflow-hidden ${
+            <div className={`rounded-[2rem] shadow-xl flex flex-col items-center transition-colors relative overflow-hidden ${
               (formDetails.settings as any).backgroundImage ? 'bg-white/95 backdrop-blur-xl border border-white/40' : 'bg-white'
-            }`}>
+            }`} style={{ borderTop: `12px solid ${formDetails.settings.primaryColor || '#1e88e5'}` }}>
               <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
-              <img src="https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png" alt="Logo" className="h-20 object-contain mb-6 drop-shadow-md relative z-10" />
-              <h1 className="text-4xl font-black text-slate-900 relative z-10 text-center">{formDetails.title}</h1>
-              <p className="text-slate-600 mt-4 text-lg max-w-2xl font-medium relative z-10 text-center">{formDetails.description}</p>
+              
+              {formDetails.settings.bannerImage ? (
+                <img src={formDetails.settings.bannerImage} alt="Banner" className="w-full h-48 md:h-64 object-cover mb-6 relative z-10" />
+              ) : (
+                <div className="pt-10">
+                  <img src="https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png" alt="Logo" className="h-20 object-contain mb-6 drop-shadow-md relative z-10" />
+                </div>
+              )}
+              
+              <div className="px-10 pb-10 w-full flex flex-col items-center">
+                <h1 className="text-4xl font-black text-slate-900 relative z-10 text-center">{formDetails.title}</h1>
+                <p className="text-slate-600 mt-4 text-lg max-w-2xl font-medium relative z-10 text-center">{formDetails.description}</p>
+              </div>
             </div>
           )}
           
@@ -454,34 +466,34 @@ export default function FormBuilder() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50">
+    <div className="flex flex-col h-screen bg-slate-50 overflow-hidden">
       {/* Topbar */}
-      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
-        <div className="flex items-center gap-4">
+      <header className="h-auto lg:h-16 bg-white border-b border-slate-200 flex flex-col lg:flex-row items-center justify-between px-4 lg:px-6 py-3 lg:py-0 shrink-0 gap-3 lg:gap-0">
+        <div className="flex items-center gap-4 w-full lg:w-auto justify-between lg:justify-start">
           <button onClick={() => navigate('/forms')} className="p-2 text-slate-500 hover:bg-slate-100 rounded-md">
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <span className="text-lg font-bold text-slate-900">Modo Edición</span>
+          <span className="text-base lg:text-lg font-bold text-slate-900">Modo Edición</span>
         </div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setShowPreview(true)} className="flex items-center gap-2 px-5 py-2 text-[#1e88e5] bg-blue-50 hover:bg-blue-100 rounded-full font-bold transition-colors">
-            <Play className="w-4 h-4 fill-current" /> Vista Previa
+        <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
+          <button onClick={() => setShowPreview(true)} className="flex items-center justify-center gap-2 px-4 lg:px-5 py-2 text-[#1e88e5] bg-blue-50 hover:bg-blue-100 rounded-full font-bold transition-colors text-sm lg:text-base flex-1 lg:flex-none">
+            <Play className="w-4 h-4 fill-current" /> <span className="hidden sm:inline">Vista Previa</span>
           </button>
-          <button onClick={handlePublish} disabled={isSaving} className="flex items-center gap-2 px-6 py-2 bg-[#1e88e5] hover:bg-[#1565c0] text-white rounded-full font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-70">
-            <Save className="w-4 h-4" /> {isSaving ? 'Guardando...' : 'Guardar y Publicar'}
+          <button onClick={handlePublish} disabled={isSaving} className="flex items-center justify-center gap-2 px-4 lg:px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-full font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-70 text-sm lg:text-base flex-1 lg:flex-none">
+            <Save className="w-4 h-4" /> {isSaving ? '...' : <span className="hidden sm:inline">Guardar y Publicar</span>}
           </button>
         </div>
       </header>
 
       {/* Main Workspace */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden relative">
         
         {/* Left Panel: Tools */}
-        <aside className="w-72 bg-white border-r border-slate-200 flex flex-col shrink-0 z-10 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-          <div className="p-6 border-b border-slate-100">
+        <aside className="w-full lg:w-72 bg-white border-b lg:border-b-0 lg:border-r border-slate-200 flex flex-col shrink-0 z-20 shadow-sm lg:shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+          <div className="p-3 lg:p-6 border-b border-slate-100 hidden lg:block">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Añadir Elementos</h3>
           </div>
-          <div className="p-4 flex-1 overflow-y-auto space-y-2">
+          <div className="p-2 lg:p-4 flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto hide-scrollbar">
             {availableTools.map(tool => {
               const Icon = tool.icon;
               const isSection = tool.type === 'section';
@@ -489,14 +501,14 @@ export default function FormBuilder() {
                 <button 
                   key={tool.type}
                   onClick={() => addField(tool.type)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-all border ${
+                  className={`flex-shrink-0 lg:w-full flex items-center justify-center lg:justify-start gap-2 lg:gap-3 px-3 lg:px-4 py-2 lg:py-3 text-xs lg:text-sm font-bold rounded-lg lg:rounded-xl transition-all border whitespace-nowrap ${
                     isSection 
-                      ? 'bg-slate-800 text-white border-slate-800 hover:bg-slate-700 hover:shadow-md'
-                      : 'text-slate-600 border-transparent hover:bg-blue-50 hover:text-[#1e88e5] hover:border-blue-100'
+                      ? 'bg-slate-900 text-white border-slate-900 hover:bg-slate-800 hover:shadow-md'
+                      : 'text-slate-600 border-slate-200 lg:border-transparent hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300'
                   }`}
                 >
-                  <Icon className="w-5 h-5" />
-                  {tool.label}
+                  <Icon className="w-4 h-4 lg:w-5 lg:h-5" />
+                  <span className="hidden sm:inline lg:inline">{tool.label}</span>
                 </button>
               );
             })}
@@ -505,7 +517,7 @@ export default function FormBuilder() {
 
         {/* Center Panel: Canvas */}
         <main 
-          className="flex-1 overflow-y-auto p-8 flex flex-col items-center relative transition-all duration-500 bg-cover bg-center bg-fixed"
+          className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col items-center relative transition-all duration-500 bg-cover bg-center bg-fixed pb-24 lg:pb-8"
           style={{
             backgroundColor: (formDetails.settings as any).backgroundImage ? 'transparent' : formDetails.settings.backgroundColor || '#F1F5F9',
             backgroundImage: (formDetails.settings as any).backgroundImage ? `url(${(formDetails.settings as any).backgroundImage})` : 'none'
@@ -517,22 +529,38 @@ export default function FormBuilder() {
           <div className="max-w-3xl w-full relative z-10 flex-1 flex flex-col">
             
             {/* Form Header (Editable) */}
-            <div className={`rounded-[2rem] border-t-[12px] border-[#1e88e5] shadow-xl p-10 mb-6 flex flex-col items-center transition-colors ${
+            <div className={`rounded-[2rem] shadow-xl flex flex-col items-center transition-colors mb-6 overflow-hidden relative ${
               (formDetails.settings as any).backgroundImage ? 'bg-white/90 backdrop-blur-xl border border-white/20' : 'bg-white'
-            }`}>
-              <img src="https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png" alt="Logo" className="h-20 object-contain mb-6" />
-              <input 
-                type="text" 
-                value={formDetails.title}
-                onChange={(e) => setFormDetails({...formDetails, title: e.target.value})}
-                className="w-full text-center text-4xl font-black text-slate-900 mb-4 border-b-2 border-transparent hover:border-slate-200 focus:border-[#1e88e5] outline-none focus:ring-0 bg-transparent transition-colors" 
-              />
-              <textarea 
-                value={formDetails.description}
-                onChange={(e) => setFormDetails({...formDetails, description: e.target.value})}
-                className="w-full text-center text-lg text-slate-500 font-medium border-b-2 border-transparent hover:border-slate-200 focus:border-[#1e88e5] outline-none focus:ring-0 bg-transparent resize-none overflow-hidden transition-colors" 
-                rows={2}
-              />
+            }`} style={{ borderTop: `12px solid ${formDetails.settings.primaryColor || '#1e88e5'}` }}>
+              
+              {formDetails.settings.bannerImage ? (
+                <div className="w-full relative group">
+                  <img src={formDetails.settings.bannerImage} alt="Banner" className="w-full h-48 md:h-64 object-cover mb-6" />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                     <button onClick={() => setFormDetails({...formDetails, settings: {...formDetails.settings, bannerImage: ''}})} className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold">Quitar Banner</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="pt-10">
+                  <img src="https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png" alt="Logo" className="h-20 object-contain mb-6" />
+                </div>
+              )}
+              
+              <div className="px-10 pb-10 w-full flex flex-col items-center">
+                <input 
+                  type="text" 
+                  value={formDetails.title}
+                  onChange={(e) => setFormDetails({...formDetails, title: e.target.value})}
+                  className="w-full text-center text-4xl font-black text-slate-900 mb-4 border-b-2 border-transparent hover:border-slate-200 outline-none focus:ring-0 bg-transparent transition-colors" 
+                  style={{ borderBottomColor: formDetails.title ? 'transparent' : formDetails.settings.primaryColor || '#1e88e5' }}
+                />
+                <textarea 
+                  value={formDetails.description}
+                  onChange={(e) => setFormDetails({...formDetails, description: e.target.value})}
+                  className="w-full text-center text-lg text-slate-500 font-medium border-b-2 border-transparent hover:border-slate-200 outline-none focus:ring-0 bg-transparent resize-none overflow-hidden transition-colors" 
+                  rows={2}
+                />
+              </div>
             </div>
 
             {/* Form Fields */}
@@ -645,6 +673,28 @@ export default function FormBuilder() {
                   </div>
                 </div>
                 <div>
+                  <label className="block text-sm font-bold text-slate-600 mb-2">Color Principal (Botones)</label>
+                  <div className="flex gap-2 items-center">
+                    <input 
+                      type="color" 
+                      value={formDetails.settings.primaryColor || '#1e88e5'}
+                      onChange={(e) => setFormDetails({...formDetails, settings: {...formDetails.settings, primaryColor: e.target.value}})}
+                      className="w-12 h-12 rounded-lg cursor-pointer border-none"
+                    />
+                    <span className="text-slate-500 text-sm font-medium">{formDetails.settings.primaryColor || '#1e88e5'}</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-600 mb-2">Banner de Portada (URL)</label>
+                  <input 
+                    type="text" 
+                    placeholder="https://ejemplo.com/banner.jpg"
+                    value={formDetails.settings.bannerImage || ''}
+                    onChange={(e) => setFormDetails({...formDetails, settings: {...formDetails.settings, bannerImage: e.target.value}})}
+                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl py-3 px-4 outline-none text-slate-700 font-medium transition-colors"
+                  />
+                </div>
+                <div>
                   <label className="block text-sm font-bold text-slate-600 mb-2">Imagen de Fondo (URL)</label>
                   <input 
                     type="text" 
@@ -693,10 +743,18 @@ export default function FormBuilder() {
         </main>
 
         {/* Right Panel: Settings */}
-        <aside className="w-80 bg-white border-l border-slate-200 flex flex-col shrink-0 z-10">
-          <div className="p-4 border-b border-slate-100 flex items-center gap-2">
-            <Settings2 className="w-4 h-4 text-slate-500" />
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Propiedades del Campo</h3>
+        <aside className={`w-full lg:w-80 bg-white border-t lg:border-t-0 lg:border-l border-slate-200 flex flex-col shrink-0 z-30 transition-all duration-300 ${activeField ? 'fixed bottom-0 left-0 right-0 h-[50vh] lg:h-auto lg:relative lg:flex shadow-[0_-10px_40px_rgba(0,0,0,0.1)] lg:shadow-none rounded-t-2xl lg:rounded-none' : 'hidden lg:flex'}`}>
+          <div className="w-full flex justify-center py-2 lg:hidden cursor-pointer" onClick={() => setActiveFieldId(null)}>
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full"></div>
+          </div>
+          <div className="p-3 lg:p-4 border-b border-slate-100 flex items-center justify-between gap-2 bg-slate-50/50 lg:bg-transparent rounded-t-2xl lg:rounded-none">
+            <div className="flex items-center gap-2">
+              <Settings2 className="w-4 h-4 text-slate-500" />
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Propiedades del Campo</h3>
+            </div>
+            <button className="lg:hidden p-1 text-slate-400 hover:text-slate-600" onClick={() => setActiveFieldId(null)}>
+              <X className="w-5 h-5"/>
+            </button>
           </div>
           
           <div className="p-6 flex-1 overflow-y-auto">
