@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, LayoutTemplate, MoreVertical, Edit2, Share2, BarChart2, X, Copy, CheckCircle2, Calendar, Trash2 } from 'lucide-react';
+import { Plus, LayoutTemplate, MoreVertical, Edit2, Share2, BarChart2, X, Copy, CheckCircle2, Calendar, Trash2, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
@@ -8,36 +8,41 @@ export default function FormsList() {
   const [forms, setForms] = useState<any[]>([]);
   const [shareModal, setShareModal] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadForms = async () => {
+    setIsLoading(true);
+    try {
+      let supabaseForms: any[] = [];
+      let supabaseResponses: any[] = [];
+
+      try {
+        const { data: formsData } = await supabase.from('forms').select('id, title, status, created_at, settings');
+        supabaseForms = formsData || [];
+        const { data: responsesData } = await supabase.from('form_responses').select('form_id');
+        supabaseResponses = responsesData || [];
+      } catch(e) {
+        console.error("Supabase error:", e);
+      }
+
+      const allForms = supabaseForms.map((f: any) => ({
+        id: f.id,
+        title: f.title,
+        status: f.status,
+        date: new Date(f.created_at).toISOString().split('T')[0],
+        responses: supabaseResponses.filter((r: any) => r.form_id === f.id).length,
+        settings: f.settings
+      }));
+
+      setForms(allForms.reverse());
+    } catch (error) {
+      console.error('Error loading forms:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadForms() {
-      try {
-        let supabaseForms: any[] = [];
-        let supabaseResponses: any[] = [];
-
-        try {
-          const { data: formsData } = await supabase.from('forms').select('id, title, status, created_at, settings');
-          supabaseForms = formsData || [];
-          const { data: responsesData } = await supabase.from('form_responses').select('form_id');
-          supabaseResponses = responsesData || [];
-        } catch(e) {
-          console.error("Supabase error:", e);
-        }
-
-        const allForms = supabaseForms.map((f: any) => ({
-          id: f.id,
-          title: f.title,
-          status: f.status,
-          date: new Date(f.created_at).toISOString().split('T')[0],
-          responses: supabaseResponses.filter((r: any) => r.form_id === f.id).length,
-          settings: f.settings
-        }));
-
-        setForms(allForms.reverse());
-      } catch (error) {
-        console.error('Error loading forms:', error);
-      }
-    }
     loadForms();
   }, []);
 
@@ -74,7 +79,15 @@ export default function FormsList() {
           </h1>
           <p className="text-sm text-slate-500 mt-1">Administra y analiza todos tus formularios ciudadanos.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => loadForms()}
+            disabled={isLoading}
+            className={`inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm ${isLoading ? 'opacity-75 cursor-not-allowed' : ''}`}
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Actualizar
+          </button>
           <button
             onClick={async () => {
               if (!confirm("¿Deseas eliminar los registros duplicados y excedentes en todos los formularios respetando el límite que hayas configurado?")) return;

@@ -22,7 +22,26 @@ export default function AdminLayout() {
       if (!session) navigate('/login');
     });
 
-    return () => subscription.unsubscribe();
+    const checkDarkMode = async () => {
+      const { data } = await supabase.from('forms').select('settings').eq('title', 'GLOBAL_APP_SETTINGS').single();
+      if (data?.settings) {
+        if (data.settings.darkMode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+    };
+    checkDarkMode();
+    
+    // Also listen to settings-updated event from Settings page
+    const handleSettingsUpdated = () => checkDarkMode();
+    window.addEventListener('settings-updated', handleSettingsUpdated);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('settings-updated', handleSettingsUpdated);
+    };
   }, [navigate]);
 
   const handleLogout = async () => {
@@ -41,7 +60,7 @@ export default function AdminLayout() {
   if (loading) return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC] font-sans overflow-hidden relative">
+    <div className="flex h-screen bg-slate-50 font-sans overflow-hidden relative">
       {/* Mobile Backdrop */}
       {isSidebarOpen && (
         <div 
@@ -93,7 +112,7 @@ export default function AdminLayout() {
                 }}
                 className={`flex items-center px-3.5 py-3 text-sm font-medium rounded-lg transition-all duration-200 group ${
                   isActive 
-                    ? 'bg-slate-900 text-white shadow-sm' 
+                    ? 'bg-slate-800 text-white shadow-sm' 
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 } ${isSidebarOpen ? (isActive ? 'translate-x-1' : 'hover:translate-x-1') : 'justify-center px-0'}`}
                 title={!isSidebarOpen ? item.name : undefined}
