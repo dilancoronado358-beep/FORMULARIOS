@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { UploadCloud, Send, CheckCircle2, Loader2, AlertCircle, XCircle } from 'lucide-react';
+import { Turnstile } from '@marsidev/react-turnstile';
 import { supabase } from '../lib/supabase';
 
 export default function PublicForm() {
@@ -17,6 +18,7 @@ export default function PublicForm() {
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const [isClosed, setIsClosed] = useState(false);
   const [closedReason, setClosedReason] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadForm() {
@@ -209,6 +211,12 @@ export default function PublicForm() {
       // We do async inside an IIFE to not block
       (async () => {
         try {
+          if (!turnstileToken) {
+             setSubmitError("Por favor, completa el desafío de seguridad (No soy un robot) antes de enviar.");
+             setIsSubmitting(false);
+             return;
+          }
+
           // Custom Ecuadorian Cedula validation
           let cedulaInvalid = false;
           Object.entries(responses).forEach(([k, v]) => {
@@ -591,6 +599,15 @@ export default function PublicForm() {
           </div>
         )}
         
+        {currentPage === pages.length - 1 && (
+           <div className={`p-4 md:p-6 mb-4 flex justify-center items-center rounded-[1.5rem] md:rounded-[2rem] ${bgImage ? 'bg-white/95 backdrop-blur-md border border-white/40 shadow-lg' : 'bg-white shadow-sm border border-slate-100'}`}>
+             <Turnstile 
+                siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} 
+                onSuccess={(token) => setTurnstileToken(token)} 
+             />
+           </div>
+        )}
+
         <div className={`p-5 md:p-8 flex flex-col md:flex-row gap-3 md:gap-4 rounded-[1.5rem] md:rounded-[2rem] ${bgImage ? 'bg-white/95 backdrop-blur-md border border-white/40 shadow-lg' : 'bg-white shadow-sm border border-slate-100'}`}>
           {currentPage > 0 && (
             <button 
