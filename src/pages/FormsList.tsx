@@ -118,10 +118,21 @@ export default function FormsList() {
                     const normName = (r.user_name || 'anónimo').toLowerCase().trim();
                     const normEmail = (r.user_email || 'no proporcionado').toLowerCase().trim();
                     
-                    const isBot = normEmail.includes('@example');
+                    const allowedDomains = [
+                      'gmail.com', 'googlemail.com',
+                      'outlook.com', 'outlook.es', 'hotmail.com', 'hotmail.es', 'live.com', 'live.com.mx', 'msn.com',
+                      'yahoo.com', 'yahoo.es', 'ymail.com',
+                      'protonmail.com', 'proton.me', 'pm.me',
+                      'zohomail.com', 'zoho.com',
+                      'icloud.com', 'me.com', 'mac.com'
+                    ];
+                    const emailParts = normEmail.split('@');
+                    const emailDomain = emailParts.length > 1 ? emailParts[emailParts.length - 1] : '';
+                    
+                    const isInvalidDomain = !allowedDomains.includes(emailDomain);
                     const isNoEmail = normEmail === 'no proporcionado';
 
-                    if (cedulaInvalid || isBot || isNoEmail) {
+                    if (cedulaInvalid || isInvalidDomain || isNoEmail) {
                       toDelete.push(r.id);
                     } else if ((normName !== 'anónimo' && seen.has('n:'+normName)) || (normEmail !== 'no proporcionado' && seen.has('e:'+normEmail))) {
                       toDelete.push(r.id);

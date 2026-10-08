@@ -263,19 +263,31 @@ export default function PublicForm() {
             }
           });
 
-          // Anti-bot check for example emails
-          if (inferredEmail.toLowerCase().includes('@example')) {
-             setSubmitError("No se permiten correos de prueba o bots. Por favor, ingresa un correo electrónico real.");
-             setIsSubmitting(false);
-             return;
-          }
-          
           // Require email check
           if (inferredEmail === 'No proporcionado') {
              setSubmitError("El correo electrónico es obligatorio para el registro. Por favor, asegúrate de ingresar tu correo en el formulario.");
              setIsSubmitting(false);
              return;
           }
+
+          // Anti-bot & Domain check
+          const allowedDomains = [
+            'gmail.com', 'googlemail.com',
+            'outlook.com', 'outlook.es', 'hotmail.com', 'hotmail.es', 'live.com', 'live.com.mx', 'msn.com',
+            'yahoo.com', 'yahoo.es', 'ymail.com',
+            'protonmail.com', 'proton.me', 'pm.me',
+            'zohomail.com', 'zoho.com',
+            'icloud.com', 'me.com', 'mac.com'
+          ];
+          const emailParts = inferredEmail.toLowerCase().split('@');
+          const emailDomain = emailParts.length > 1 ? emailParts[emailParts.length - 1] : '';
+          
+          if (!allowedDomains.includes(emailDomain)) {
+             setSubmitError("Solo se permiten correos de proveedores reconocidos (Gmail, Outlook, Yahoo, Proton, Zoho, iCloud). Por favor usa un correo válido.");
+             setIsSubmitting(false);
+             return;
+          }
+          
 
           // 0. Verificar Límite antes de guardar
           try {
