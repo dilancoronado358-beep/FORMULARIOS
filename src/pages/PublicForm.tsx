@@ -217,6 +217,28 @@ export default function PublicForm() {
              return;
           }
 
+          // Fetch IP address for tracking and basic rate limiting
+          let clientIP = '0.0.0.0';
+          try {
+            const ipRes = await fetch('https://api.ipify.org?format=json');
+            const ipData = await ipRes.json();
+            clientIP = ipData.ip;
+          } catch(e) {}
+          
+          // Basic browser-level IP rate limit check (max 3 submissions per IP in the last minute)
+          const recentSubmissions = JSON.parse(localStorage.getItem('rm_recent_ips') || '[]');
+          const now = Date.now();
+          const oneMinuteAgo = now - 60000;
+          const validSubmissions = recentSubmissions.filter((t: number) => t > oneMinuteAgo);
+          
+          if (validSubmissions.length >= 3) {
+             setSubmitError("Se ha detectado actividad inusual desde tu red. Has alcanzado el límite de envíos por seguridad.");
+             setIsSubmitting(false);
+             return;
+          }
+          validSubmissions.push(now);
+          localStorage.setItem('rm_recent_ips', JSON.stringify(validSubmissions));
+
           // Honeypot check
           if (responses['_honeypot']) {
              // Silently reject if the honeypot is filled
@@ -362,6 +384,7 @@ export default function PublicForm() {
 
           const dataWithLabels: Record<string, any> = {};
           Object.entries(responses).forEach(([k, v]) => {
+            if (k === '_honeypot') return; // Don't save honeypot data
             const field = fields.find((f: any) => f.id === k);
             if (field) {
               dataWithLabels[field.label] = v;
@@ -369,6 +392,8 @@ export default function PublicForm() {
               dataWithLabels[k] = v;
             }
           });
+          
+          dataWithLabels['_ip_address'] = clientIP;
 
           const newResponseId = Math.random().toString(36).substring(2, 6).toUpperCase();
 
