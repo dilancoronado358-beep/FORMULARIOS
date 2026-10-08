@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 
 export default function Responses() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedFormFilter, setSelectedFormFilter] = useState('');
   const [responses, setResponses] = useState<any[]>([]);
 
   useEffect(() => {
@@ -49,11 +50,13 @@ export default function Responses() {
   };
 
   // Filter responses
-  const filteredResponses = responses.filter(r => 
-    r.user.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    r.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.formName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredResponses = responses.filter(r => {
+    const matchesSearch = r.user.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          r.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          r.formName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesForm = selectedFormFilter ? r.formName === selectedFormFilter : true;
+    return matchesSearch && matchesForm;
+  });
 
   const exportCSV = () => {
     if (responses.length === 0) return;
@@ -156,6 +159,17 @@ export default function Responses() {
             />
           </div>
           <div className="flex items-center gap-3">
+            <select 
+              value={selectedFormFilter}
+              onChange={(e) => setSelectedFormFilter(e.target.value)}
+              className="px-4 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-semibold focus:border-[#1e88e5] outline-none transition-all cursor-pointer bg-white"
+            >
+              <option value="">Todos los formularios</option>
+              {Array.from(new Set(responses.map(r => r.formName))).map((formName, i) => (
+                <option key={i} value={formName as string}>{formName as string}</option>
+              ))}
+            </select>
+            
             <button className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-semibold hover:border-slate-300 hover:bg-slate-50 transition-all">
               <Filter className="w-5 h-5" /> Filtros avanzados
             </button>
@@ -252,12 +266,12 @@ export default function Responses() {
                         // Buscar la respuesta usando el label o el id
                         let answer = viewResponse.data[f.label];
                         if (answer === undefined) answer = viewResponse.data[f.id];
-                        return { label: f.label, answer };
+                        return { label: f.label, answer, type: f.type };
                       })
                       .filter((f: any) => f.answer !== undefined && f.answer !== null);
                   } else {
                     // Fallback si por alguna razón no tenemos formFields
-                    orderedFields = Object.entries(viewResponse.data || {}).map(([key, value]) => ({ label: key, answer: value }));
+                    orderedFields = Object.entries(viewResponse.data || {}).map(([key, value]) => ({ label: key, answer: value, type: 'text' }));
                   }
 
                   if (orderedFields.length === 0) {
@@ -268,14 +282,27 @@ export default function Responses() {
                     );
                   }
 
-                  return orderedFields.map((field, i) => (
-                    <div key={i} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
-                      <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">{field.label}</h3>
-                      <p className="text-lg font-medium text-slate-800 break-words whitespace-pre-wrap">
-                        {Array.isArray(field.answer) ? field.answer.join(', ') : field.answer || '-'}
-                      </p>
-                    </div>
-                  ));
+                  return orderedFields.map((field, i) => {
+                    const isFile = field.type === 'file' || field.type === 'image' || (typeof field.answer === 'string' && field.answer.startsWith('http'));
+                    
+                    return (
+                      <div key={i} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">{field.label}</h3>
+                        {isFile ? (
+                          <div className="mt-2">
+                            <a href={field.answer} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 bg-blue-100 text-[#1e88e5] hover:bg-[#1e88e5] hover:text-white px-4 py-2 rounded-lg font-bold text-sm transition-colors">
+                              <FileText className="w-4 h-4" />
+                              Ver / Descargar Archivo
+                            </a>
+                          </div>
+                        ) : (
+                          <p className="text-lg font-medium text-slate-800 break-words whitespace-pre-wrap">
+                            {Array.isArray(field.answer) ? field.answer.join(', ') : field.answer || '-'}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  });
                 })()}
 
                 {Object.keys(viewResponse.data || {}).length === 0 && (

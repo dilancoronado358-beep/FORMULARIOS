@@ -18,6 +18,8 @@ export default function PublicForm() {
   const [isClosed, setIsClosed] = useState(false);
   const [closedReason, setClosedReason] = useState<string | null>(null);
   const [loadTime] = useState(Date.now());
+  const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>({});
+  const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function loadForm() {
@@ -301,31 +303,27 @@ export default function PublicForm() {
             }
           });
 
-          // Require email check
-          if (inferredEmail === 'No proporcionado') {
-             setSubmitError("El correo electrónico es obligatorio para el registro. Por favor, asegúrate de ingresar tu correo en el formulario.");
-             setIsSubmitting(false);
-             return;
-          }
-
-          // Anti-bot & Domain check
-          const allowedDomains = [
-            'gmail.com', 'googlemail.com',
-            'outlook.com', 'outlook.es', 'hotmail.com', 'hotmail.es', 'live.com', 'live.com.mx', 'msn.com',
-            'yahoo.com', 'yahoo.es', 'ymail.com',
-            'protonmail.com', 'proton.me', 'pm.me',
-            'zohomail.com', 'zoho.com',
-            'icloud.com', 'me.com', 'mac.com'
-          ];
-          const emailParts = inferredEmail.toLowerCase().split('@');
-          const emailDomain = emailParts.length > 1 ? emailParts[emailParts.length - 1] : '';
+          // El correo ya no es estrictamente obligatorio para todos los formularios
           
-          if (!allowedDomains.includes(emailDomain)) {
-             setSubmitError("Solo se permiten correos de proveedores reconocidos (Gmail, Outlook, Yahoo, Proton, Zoho, iCloud). Por favor usa un correo válido.");
-             setIsSubmitting(false);
-             return;
+          // Anti-bot & Domain check (Solo si se proporcionó un correo)
+          if (inferredEmail !== 'No proporcionado') {
+            const allowedDomains = [
+              'gmail.com', 'googlemail.com',
+              'outlook.com', 'outlook.es', 'hotmail.com', 'hotmail.es', 'live.com', 'live.com.mx', 'msn.com',
+              'yahoo.com', 'yahoo.es', 'ymail.com',
+              'protonmail.com', 'proton.me', 'pm.me',
+              'zohomail.com', 'zoho.com',
+              'icloud.com', 'me.com', 'mac.com'
+            ];
+            const emailParts = inferredEmail.toLowerCase().split('@');
+            const emailDomain = emailParts.length > 1 ? emailParts[emailParts.length - 1] : '';
+            
+            if (!allowedDomains.includes(emailDomain)) {
+               setSubmitError("Solo se permiten correos de proveedores reconocidos (Gmail, Outlook, Yahoo, Proton, Zoho, iCloud). Por favor usa un correo válido.");
+               setIsSubmitting(false);
+               return;
+            }
           }
-          
 
           // 0. Verificar Límite antes de guardar
           try {
@@ -418,6 +416,38 @@ export default function PublicForm() {
             data: dataWithLabels
           };
           localStorage.setItem('rm_responses_list', JSON.stringify([...existing, newResponse]));
+
+          // === INTEGRACIÓN DE NOTIFICACIONES POR CORREO (EmailJS) ===
+          try {
+             // Importamos dinámicamente para no bloquear la carga inicial
+             const emailjs = await import('@emailjs/browser');
+             
+             // NOTA: Para que esto funcione, debes reemplazar estos textos con tus verdaderas credenciales de EmailJS
+             const SERVICE_ID = 'TU_SERVICE_ID'; 
+             const TEMPLATE_ID = 'TU_TEMPLATE_ID';
+             const PUBLIC_KEY = 'TU_PUBLIC_KEY';
+             
+             if (SERVICE_ID !== 'TU_SERVICE_ID') {
+               await emailjs.send(
+                  SERVICE_ID,
+                  TEMPLATE_ID,
+                  {
+                     form_title: form.title,
+                     user_name: inferredName,
+                     user_email: inferredEmail,
+                     // Formateamos los datos para que se vean bien en el correo
+                     form_data: Object.entries(dataWithLabels)
+                        .filter(([k]) => k !== '_ip_address')
+                        .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+                        .join('\n')
+                  },
+                  PUBLIC_KEY
+               );
+             }
+          } catch (e) {
+             console.error('Error al enviar la notificación por correo:', e);
+             // No detenemos el envío si el correo falla, la respuesta ya se guardó.
+          }
 
           setIsSubmitting(false);
           setSubmitSuccess(true);
@@ -554,11 +584,68 @@ export default function PublicForm() {
                   rows={4}
                 ></textarea>
               ) : field.type === 'file' || field.type === 'image' ? (
-                <div className={`border-2 border-dashed transition-colors p-6 md:p-10 rounded-xl text-center bg-white/80 cursor-pointer group shadow-inner ${errors[field.id] ? 'border-red-300 hover:border-red-500 hover:bg-red-50/50' : 'border-[#1e88e5]/40 hover:border-[#1e88e5] hover:bg-blue-50/50'}`}>
-                  <UploadCloud className={`w-8 h-8 md:w-10 md:h-10 mx-auto mb-2 md:mb-3 transition-colors ${errors[field.id] ? 'text-red-400 group-hover:text-red-500' : 'text-[#1e88e5]/60 group-hover:text-[#1e88e5]'}`} />
-                  <p className="text-sm md:text-base text-slate-700 font-medium">Haz clic o arrastra tu archivo aquí</p>
-                  <p className="text-xs md:text-sm text-slate-500 mt-1">Soporta PNG, JPG o PDF (Max. 10MB)</p>
-                </div>
+                <label className={`block border-2 border-dashed transition-colors p-6 md:p-10 rounded-xl text-center bg-white/80 cursor-pointer group shadow-inner relative overflow-hidden ${errors[field.id] || uploadErrors[field.id] ? 'border-red-300 hover:border-red-500 hover:bg-red-50/50' : 'border-[#1e88e5]/40 hover:border-[#1e88e5] hover:bg-blue-50/50'}`}>
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    accept={field.type === 'image' ? 'image/*' : '.pdf,.png,.jpg,.jpeg'}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      
+                      if (file.size > 10 * 1024 * 1024) {
+                        setUploadErrors(prev => ({...prev, [field.id]: 'El archivo excede los 10MB'}));
+                        return;
+                      }
+
+                      setUploadingFiles(prev => ({...prev, [field.id]: true}));
+                      setUploadErrors(prev => ({...prev, [field.id]: ''}));
+                      
+                      try {
+                        const fileExt = file.name.split('.').pop();
+                        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+                        const filePath = `${form.id}/${fileName}`;
+                        
+                        const { error: uploadError } = await supabase.storage
+                          .from('form_uploads')
+                          .upload(filePath, file);
+                          
+                        if (uploadError) throw uploadError;
+                        
+                        const { data: { publicUrl } } = supabase.storage
+                          .from('form_uploads')
+                          .getPublicUrl(filePath);
+                          
+                        setResponses(prev => ({ ...prev, [field.id]: publicUrl }));
+                        if (errors[field.id]) setErrors(prev => ({ ...prev, [field.id]: false }));
+                      } catch (error: any) {
+                        console.error('Upload error:', error);
+                        setUploadErrors(prev => ({...prev, [field.id]: 'Error al subir el archivo. Verifica que el bucket "form_uploads" sea público en Supabase.'}));
+                      } finally {
+                        setUploadingFiles(prev => ({...prev, [field.id]: false}));
+                      }
+                    }}
+                  />
+                  {uploadingFiles[field.id] ? (
+                    <div className="flex flex-col items-center justify-center py-4">
+                      <Loader2 className="w-8 h-8 text-[#1e88e5] animate-spin mx-auto mb-2" />
+                      <p className="text-sm text-slate-600 font-medium">Subiendo archivo...</p>
+                    </div>
+                  ) : responses[field.id] ? (
+                    <div className="flex flex-col items-center justify-center py-4">
+                      <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                      <p className="text-sm text-slate-700 font-bold">Archivo subido correctamente</p>
+                      <p className="text-xs text-[#1e88e5] mt-1 underline">Haz clic para cambiar archivo</p>
+                    </div>
+                  ) : (
+                    <>
+                      <UploadCloud className={`w-8 h-8 md:w-10 md:h-10 mx-auto mb-2 md:mb-3 transition-colors ${errors[field.id] || uploadErrors[field.id] ? 'text-red-400 group-hover:text-red-500' : 'text-[#1e88e5]/60 group-hover:text-[#1e88e5]'}`} />
+                      <p className="text-sm md:text-base text-slate-700 font-medium">Haz clic o arrastra tu archivo aquí</p>
+                      <p className="text-xs md:text-sm text-slate-500 mt-1">Soporta PNG, JPG o PDF (Max. 10MB)</p>
+                      {uploadErrors[field.id] && <p className="text-xs md:text-sm text-red-500 mt-2 font-bold">{uploadErrors[field.id]}</p>}
+                    </>
+                  )}
+                </label>
               ) : field.type === 'select' ? (
                 <select 
                   value={responses[field.id] || ''}
