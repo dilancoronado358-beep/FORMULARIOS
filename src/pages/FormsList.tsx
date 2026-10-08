@@ -29,7 +29,8 @@ export default function FormsList() {
           title: f.title,
           status: f.status,
           date: new Date(f.created_at).toISOString().split('T')[0],
-          responses: supabaseResponses.filter((r: any) => r.form_id === f.id).length
+          responses: supabaseResponses.filter((r: any) => r.form_id === f.id).length,
+          settings: f.settings
         }));
 
         setForms(allForms.reverse());
@@ -74,7 +75,7 @@ export default function FormsList() {
         <div className="flex gap-2">
           <button
             onClick={async () => {
-              if (!confirm("¿Deseas eliminar los registros duplicados y excedentes (dejando solo 40) en todos los formularios?")) return;
+              if (!confirm("¿Deseas eliminar los registros duplicados y excedentes en todos los formularios respetando el límite que hayas configurado?")) return;
               try {
                 for (const form of forms) {
                   const { data } = await supabase.from('form_responses').select('id, user_name, user_email, created_at, data').eq('form_id', form.id).order('created_at', { ascending: true });
@@ -103,7 +104,8 @@ export default function FormsList() {
                     } else if ((normName !== 'anónimo' && seen.has('n:'+normName)) || (normEmail !== 'no proporcionado' && seen.has('e:'+normEmail))) {
                       toDelete.push(r.id);
                     } else {
-                      if (kept < 40) {
+                      const formLimit = form.settings?.maxResponses ? parseInt(form.settings.maxResponses) : Infinity;
+                      if (kept < formLimit) {
                         if (normName !== 'anónimo') seen.add('n:'+normName);
                         if (normEmail !== 'no proporcionado') seen.add('e:'+normEmail);
                         kept++;

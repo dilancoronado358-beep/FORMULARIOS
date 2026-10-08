@@ -45,7 +45,7 @@ export default function PublicForm() {
                   .select('id', { count: 'exact', head: true })
                   .eq('form_id', data.id);
                   
-                const maxResponses = data.settings?.maxResponses ? parseInt(data.settings.maxResponses) : 40;
+                const maxResponses = data.settings?.maxResponses ? parseInt(data.settings.maxResponses) : Infinity;
                 
                 // Fallback a localStorage si Supabase falla
                 let totalResponses = count || 0;
@@ -259,7 +259,7 @@ export default function PublicForm() {
                .from('form_responses')
                .select('id', { count: 'exact', head: true })
                .eq('form_id', form.id);
-             const maxResponses = form.settings?.maxResponses ? parseInt(form.settings.maxResponses) : 40;
+             const maxResponses = form.settings?.maxResponses ? parseInt(form.settings.maxResponses) : Infinity;
              if ((count || 0) >= maxResponses) {
                 setSubmitError("Lo sentimos, se acaba de alcanzar el límite máximo de respuestas para este formulario.");
                 setIsSubmitting(false);
