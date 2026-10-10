@@ -122,10 +122,17 @@ export default function FormBuilder() {
     // 1. Guardar en Supabase
     try {
       const formId = id || generateUUID();
+      
+      const generateSlug = (title: string, formId: string) => {
+        const base = (title || 'formulario').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+        return `${base}-${formId.substring(0, 6)}`;
+      };
+      const formSlug = generateSlug(newForm.title, formId);
+      
       const { error } = await supabase.from('forms').upsert({
         id: formId,
         title: newForm.title || 'Formulario sin título',
-        slug: formId, // El slug es obligatorio
+        slug: formSlug,
         description: newForm.description,
         status: newForm.status,
         settings: { ...newForm.settings, fields: newForm.fields } // Almacenamos fields dentro de settings (JSONB)

@@ -24,7 +24,7 @@ export default function PublicForm() {
   useEffect(() => {
     async function loadForm() {
       try {
-        const { data, error } = await supabase.from('forms').select('*').eq('id', slug).single();
+        const { data, error } = await supabase.from('forms').select('*').or(`slug.eq.${slug},id.eq.${slug}`).single();
         if (data) {
           setForm(data);
           

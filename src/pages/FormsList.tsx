@@ -17,7 +17,7 @@ export default function FormsList() {
       let supabaseResponses: any[] = [];
 
       try {
-        const { data: formsData } = await supabase.from('forms').select('id, title, status, created_at, settings');
+        const { data: formsData } = await supabase.from('forms').select('id, title, slug, status, created_at, settings');
         supabaseForms = formsData || [];
         const { data: responsesData } = await supabase.from('form_responses').select('form_id');
         supabaseResponses = responsesData || [];
@@ -28,6 +28,7 @@ export default function FormsList() {
       const allForms = supabaseForms.map((f: any) => ({
         id: f.id,
         title: f.title,
+        slug: f.slug,
         status: f.status,
         date: new Date(f.created_at).toISOString().split('T')[0],
         responses: supabaseResponses.filter((r: any) => r.form_id === f.id).length,
@@ -255,7 +256,7 @@ export default function FormsList() {
                   <BarChart2 className="w-4 h-4" />
                 </button>
                 <button 
-                  onClick={() => setShareModal(form.id)}
+                  onClick={() => setShareModal(form.slug || form.id)}
                   title="Compartir y QR" 
                   className="flex flex-col items-center justify-center py-3 text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors border-r border-slate-100"
                 >
