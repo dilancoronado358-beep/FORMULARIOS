@@ -155,6 +155,8 @@ export default function PublicForm() {
   const bgImage = settings.backgroundImage || null;
   const primaryColor = settings.primaryColor || '#1e88e5';
   const bannerImage = settings.bannerImage || null;
+  const fontFamily = settings.fontFamily || 'Inter';
+  const customCSS = settings.customCSS || '';
   
   // Dividir en páginas usando secciones
   const pages: any[][] = [];
@@ -464,13 +466,16 @@ export default function PublicForm() {
   };
 
   return (
-    <div 
-      className="min-h-screen py-6 px-4 md:py-12 sm:px-6 lg:px-8 flex flex-col items-center transition-colors duration-500 bg-cover bg-center bg-fixed" 
-      style={{ 
-        backgroundColor: bgImage ? 'transparent' : bgColor,
-        backgroundImage: bgImage ? `url(${bgImage})` : 'none'
-      }}
-    >
+    <>
+      {customCSS && <style>{customCSS}</style>}
+      <div 
+        className="min-h-screen py-6 px-4 md:py-12 sm:px-6 lg:px-8 flex flex-col items-center transition-colors duration-500 bg-cover bg-center bg-fixed" 
+        style={{ 
+          backgroundColor: bgImage ? 'transparent' : bgColor,
+          backgroundImage: bgImage ? `url(${bgImage})` : 'none',
+          fontFamily: fontFamily
+        }}
+      >
       {/* Capa de oscurecimiento si hay imagen para mejorar lectura */}
       {bgImage && <div className="fixed inset-0 bg-black/20 pointer-events-none z-0"></div>}
 
@@ -808,6 +813,6 @@ export default function PublicForm() {
         </div>
       )}
     </div>
-  </div>
-);
+    </>
+  );
 }

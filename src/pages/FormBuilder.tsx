@@ -14,6 +14,8 @@ type FormDetails = {
     bannerImage?: string;
     expiresAt?: string;
     maxResponses?: number;
+    fontFamily?: string;
+    customCSS?: string;
   } 
 };
 
@@ -35,10 +37,9 @@ export default function FormBuilder() {
   const [formDetails, setFormDetails] = useState<FormDetails>(() => {
     if (id) return { title: '', description: '', settings: { footerText: '', backgroundColor: '#F8FAFC', primaryColor: '#1e88e5' } };
     const saved = localStorage.getItem('rm_builder_details');
-    return saved ? JSON.parse(saved) : { 
       title: 'Participación Ciudadana', 
       description: 'Queremos conocer tus ideas...',
-      settings: { footerText: '', backgroundColor: '#F8FAFC', primaryColor: '#1e88e5' }
+      settings: { footerText: '', backgroundColor: '#F8FAFC', primaryColor: '#1e88e5', fontFamily: 'Inter', customCSS: '' }
     };
   });
 
@@ -57,7 +58,7 @@ export default function FormBuilder() {
             setFormDetails({
               title: data.title || '',
               description: data.description || '',
-              settings: data.settings || { footerText: '', backgroundColor: '#F8FAFC', primaryColor: '#1e88e5' }
+              settings: data.settings || { footerText: '', backgroundColor: '#F8FAFC', primaryColor: '#1e88e5', fontFamily: 'Inter', customCSS: '' }
             });
           }
         } catch (e) {
@@ -735,6 +736,31 @@ export default function FormBuilder() {
                     className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-slate-700 font-medium transition-colors"
                   />
                   <p className="text-xs text-slate-400 mt-1">Dejar vacío para ilimitadas</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-600 mb-2">Tipografía (Fuente)</label>
+                  <select 
+                    value={formDetails.settings.fontFamily || 'Inter'}
+                    onChange={(e) => setFormDetails({...formDetails, settings: {...formDetails.settings, fontFamily: e.target.value}})}
+                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-slate-700 font-medium transition-colors"
+                  >
+                    <option value="Inter">Inter (Por defecto)</option>
+                    <option value="Roboto">Roboto</option>
+                    <option value="Outfit">Outfit</option>
+                    <option value="Montserrat">Montserrat</option>
+                    <option value="Playfair Display">Playfair Display</option>
+                  </select>
+                </div>
+                <div className="md:col-span-2 lg:col-span-3">
+                  <label className="block text-sm font-bold text-slate-600 mb-2">CSS Personalizado (Avanzado)</label>
+                  <textarea 
+                    placeholder=".btn { border-radius: 0; }"
+                    value={formDetails.settings.customCSS || ''}
+                    onChange={(e) => setFormDetails({...formDetails, settings: {...formDetails.settings, customCSS: e.target.value}})}
+                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl py-3 px-4 focus:border-indigo-500 outline-none text-slate-700 font-mono text-sm transition-colors"
+                    rows={3}
+                  />
+                  <p className="text-xs text-slate-400 mt-1">Escribe reglas CSS válidas. Serán inyectadas en la página del formulario público.</p>
                 </div>
               </div>
             </div>
