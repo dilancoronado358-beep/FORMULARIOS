@@ -37,6 +37,7 @@ export default function FormBuilder() {
   const [formDetails, setFormDetails] = useState<FormDetails>(() => {
     if (id) return { title: '', description: '', settings: { footerText: '', backgroundColor: '#F8FAFC', primaryColor: '#1e88e5' } };
     const saved = localStorage.getItem('rm_builder_details');
+    return saved ? JSON.parse(saved) : {
       title: 'Participación Ciudadana', 
       description: 'Queremos conocer tus ideas...',
       settings: { footerText: '', backgroundColor: '#F8FAFC', primaryColor: '#1e88e5', fontFamily: 'Inter', customCSS: '' }

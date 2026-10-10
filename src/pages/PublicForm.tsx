@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { UploadCloud, Send, CheckCircle2, Loader2, AlertCircle, XCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { saveResponseOffline } from '../lib/sync';
 
 export default function PublicForm() {
   const { slug } = useParams(); // Using slug as parameter name to match App.tsx mapping or we can update App.tsx to use :id. App.tsx currently uses path="/f/:slug". I will use the actual ID here as the parameter.
@@ -399,15 +400,27 @@ export default function PublicForm() {
 
           const newResponseId = Math.random().toString(36).substring(2, 6).toUpperCase();
 
+          const payload = {
+            form_id: form.id,
+            status: 'COMPLETED',
+            data: dataWithLabels,
+            user_name: inferredName,
+            user_email: inferredEmail
+          };
+
           try {
-            await supabase.from('form_responses').insert({
-              form_id: form.id,
-              status: 'COMPLETED',
-              data: dataWithLabels,
-              user_name: inferredName,
-              user_email: inferredEmail
-            });
-          } catch(e) {}
+            if (!navigator.onLine) {
+              await saveResponseOffline(form.id, payload);
+            } else {
+              const { error: insertError } = await supabase.from('form_responses').insert(payload);
+              if (insertError) {
+                // If network error or other issue, save offline to retry later
+                await saveResponseOffline(form.id, payload);
+              }
+            }
+          } catch(e) {
+            await saveResponseOffline(form.id, payload);
+          }
 
           const newResponse = {
             id: newResponseId,
@@ -805,6 +818,7 @@ export default function PublicForm() {
         </div>
         </>
       )}
+      </div>
 
       {/* Footer del formulario (solo si no es pantalla de éxito) */}
       {!submitSuccess && settings.footerText && (
@@ -813,6 +827,6 @@ export default function PublicForm() {
         </div>
       )}
     </div>
-    </>
+  </>
   );
 }
