@@ -59,7 +59,7 @@ export default function Responses() {
   });
 
   const exportCSV = () => {
-    if (responses.length === 0) return;
+    if (filteredResponses.length === 0) return;
     
     // Load forms to get labels if needed
     const savedForms = localStorage.getItem('rm_forms_list');
@@ -77,7 +77,7 @@ export default function Responses() {
     });
     
     // Also use the ones loaded from Supabase per response
-    responses.forEach(r => {
+    filteredResponses.forEach(r => {
       if (r.formFields) {
         r.formFields.forEach((f: any) => {
           idToLabelMap[f.id] = f.label;
@@ -86,7 +86,7 @@ export default function Responses() {
     });
 
     // Normalize data: transform all keys to labels (resolving UUIDs to labels if necessary)
-    const normalizedResponses = responses.map(r => {
+    const normalizedResponses = filteredResponses.map(r => {
       const normalizedData: Record<string, any> = {};
       Object.entries(r.data || {}).forEach(([k, v]) => {
          const label = idToLabelMap[k] || k;
@@ -104,9 +104,8 @@ export default function Responses() {
     const headerLabels = Array.from(allLabels);
     const header = ['ID', 'Formulario', 'Fecha', 'Remitente', 'Correo', ...headerLabels];
     
-    let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-    // Use semicolon for Excel compatibility in Spanish locales
-    csvContent += header.join(";") + "\n";
+    // Create CSV content using standard comma separation
+    let csvContent = header.map(h => `"${h.replace(/"/g, '""')}"`).join(",") + "\n";
 
     normalizedResponses.forEach(r => {
       const row = [
@@ -117,20 +116,22 @@ export default function Responses() {
         r.email,
         ...headerLabels.map(label => {
           const val = r.normalizedData[label];
-          const strVal = Array.isArray(val) ? val.join(', ') : (val || '').toString();
-          return `"${strVal.replace(/"/g, '""')}"`;
+          return Array.isArray(val) ? val.join(', ') : (val || '').toString();
         })
       ];
-      csvContent += row.join(";") + "\n";
+      csvContent += row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(",") + "\n";
     });
 
-    const encodedUri = encodeURI(csvContent);
+    // Use Blob for reliable download across devices
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "respuestas_completas.csv");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "respuestas.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
