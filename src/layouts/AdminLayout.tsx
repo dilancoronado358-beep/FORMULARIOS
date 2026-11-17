@@ -78,7 +78,7 @@ export default function AdminLayout() {
         <div className={`p-6 flex items-center h-20 md:h-28 border-b border-slate-100 transition-all ${isSidebarOpen ? 'justify-between' : 'justify-center'}`}>
           {isSidebarOpen && (
             <img 
-              src="https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png" 
+              src="https://res.cloudinary.com/jellvthl/image/upload/v1794291401/9499f6c9-1f56-4e02-93b3-c217c443c969.png" 
               alt="Logo" 
               className="h-10 md:h-12 object-contain drop-shadow-sm animate-in fade-in zoom-in duration-300" 
             />
@@ -149,7 +149,7 @@ export default function AdminLayout() {
             <Menu className="w-5 h-5" />
           </button>
           <img 
-            src="https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png" 
+            src="https://res.cloudinary.com/jellvthl/image/upload/v1794291401/9499f6c9-1f56-4e02-93b3-c217c443c969.png" 
             alt="Logo" 
             className="h-8 object-contain" 
           />

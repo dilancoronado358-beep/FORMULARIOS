@@ -286,33 +286,26 @@ export default function FormsList() {
 // Componente separado para manejar la carga dinámica del script y el canvas del QR
 function ShareModal({ shareModal, setShareModal }: { shareModal: string, setShareModal: (v: string | null) => void }) {
   const publicLink = `${window.location.origin}/form/${shareModal}`;
+  const logoUrl = "https://res.cloudinary.com/jellvthl/image/upload/v1794291401/9499f6c9-1f56-4e02-93b3-c217c443c969.png";
   
   useEffect(() => {
-    // Cargar librería de QR de alta calidad dinámicamente
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js';
-    script.async = true;
-    script.onload = () => {
+    let isMounted = true;
+
+    const createQrInstance = (withLogo: boolean) => {
+      if (!isMounted || !(window as any).QRCodeStyling) return;
       const container = document.getElementById('qr-canvas-container');
       if (!container) return;
       container.innerHTML = '';
-      
-      const qrCode = new (window as any).QRCodeStyling({
+
+      const qrOptions: any = {
         width: 250,
         height: 250,
         data: publicLink,
-        image: "https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png",
         margin: 5,
         qrOptions: {
           typeNumber: 0,
           mode: "Byte",
           errorCorrectionLevel: "H"
-        },
-        imageOptions: {
-          hideBackgroundDots: true,
-          imageSize: 0.5,
-          margin: 10,
-          crossOrigin: "anonymous",
         },
         dotsOptions: {
           type: "rounded",
@@ -333,14 +326,47 @@ function ShareModal({ shareModal, setShareModal }: { shareModal: string, setShar
           type: "dot",
           color: "#1565c0"
         }
-      });
-      
+      };
+
+      if (withLogo) {
+        qrOptions.image = logoUrl;
+        qrOptions.imageOptions = {
+          hideBackgroundDots: true,
+          imageSize: 0.5,
+          margin: 10,
+          crossOrigin: "anonymous",
+        };
+      }
+
+      const qrCode = new (window as any).QRCodeStyling(qrOptions);
       qrCode.append(container);
       (window as any).currentQrCode = qrCode;
     };
+
+    const renderQrWithFallback = () => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => createQrInstance(true);
+      img.onerror = () => createQrInstance(false);
+      img.src = logoUrl;
+    };
+
+    if ((window as any).QRCodeStyling) {
+      renderQrWithFallback();
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    // Cargar librería de QR de alta calidad dinámicamente
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js';
+    script.async = true;
+    script.onload = renderQrWithFallback;
     document.body.appendChild(script);
 
     return () => {
+      isMounted = false;
       if (document.body.contains(script)) {
         document.body.removeChild(script);
       }

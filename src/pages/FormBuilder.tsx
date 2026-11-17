@@ -3,6 +3,17 @@ import { Type, AlignLeft, Hash, Calendar, CheckSquare, List, GripVertical, Setti
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 type Field = { id: string; type: string; label: string; placeholder: string; required: boolean; options?: string[]; allowMultiple?: boolean };
+
+const getEffectiveFieldType = (field: Field) => {
+  const labelLower = (field.label || '').toLowerCase();
+  if (field.type === 'date' || (field.type === 'text' && /(fecha|nacimiento|f\.\s*nac)/i.test(labelLower))) {
+    return 'date';
+  }
+  if (field.type === 'number' || (field.type === 'text' && /\bedad\b/i.test(labelLower))) {
+    return 'number';
+  }
+  return field.type;
+};
 type FormDetails = { 
   title: string; 
   description: string; 
@@ -313,7 +324,7 @@ export default function FormBuilder() {
                 <img src={formDetails.settings.bannerImage} alt="Banner" className="w-full h-48 md:h-64 object-cover mb-6 relative z-10" />
               ) : (
                 <div className="pt-10">
-                  <img src="https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png" alt="Logo" className="h-20 object-contain mb-6 drop-shadow-md relative z-10" />
+                  <img src="https://res.cloudinary.com/jellvthl/image/upload/v1794291401/9499f6c9-1f56-4e02-93b3-c217c443c969.png" alt="Logo" className="h-20 object-contain mb-6 drop-shadow-md relative z-10" />
                 </div>
               )}
               
@@ -344,6 +355,7 @@ export default function FormBuilder() {
                  }`} dangerouslySetInnerHTML={{ __html: field.label }} />
                );
             }
+            const effectiveType = getEffectiveFieldType(field);
             return (
               <div key={field.id} className={`space-y-3 p-8 rounded-[2rem] transition-all ${
                 (formDetails.settings as any).backgroundImage ? 'bg-white/95 backdrop-blur-md border border-white/40 shadow-lg' : 'bg-white border-2 border-transparent shadow-sm'
@@ -353,15 +365,15 @@ export default function FormBuilder() {
                 </label>
                 {field.placeholder && <p className="text-sm text-slate-600 mb-3">{field.placeholder}</p>}
                 
-                {field.type === 'textarea' ? (
+                {effectiveType === 'textarea' ? (
                   <textarea className="w-full bg-white/80 border-2 border-slate-200/60 rounded-xl p-4 focus:ring-4 focus:ring-blue-50 focus:border-[#1e88e5] outline-none resize-none transition-all text-slate-800 shadow-inner" rows={4}></textarea>
-                ) : field.type === 'file' || field.type === 'image' ? (
+                ) : effectiveType === 'file' || effectiveType === 'image' ? (
                   <div className="border-2 border-dashed border-[#1e88e5]/40 hover:border-[#1e88e5] hover:bg-blue-50/50 transition-colors p-10 rounded-xl text-center bg-white/80 cursor-pointer group shadow-inner">
                     <UploadCloud className="w-10 h-10 text-[#1e88e5]/60 group-hover:text-[#1e88e5] mx-auto mb-3 transition-colors" />
                     <p className="text-slate-700 font-medium">Haz clic o arrastra tu archivo aquí</p>
                     <p className="text-slate-500 text-sm mt-1">Soporta PNG, JPG o PDF (Max. 10MB)</p>
                   </div>
-                ) : field.type === 'select' ? (
+                ) : effectiveType === 'select' ? (
                   <select className="w-full bg-white/80 border-2 border-slate-200/60 rounded-xl p-4 focus:ring-4 focus:ring-blue-50 focus:border-[#1e88e5] outline-none transition-all text-slate-800 cursor-pointer appearance-none shadow-inner">
                     <option value="">Selecciona una opción...</option>
                     {field.options ? field.options.filter(o => o.trim() !== '').map((opt, i) => (
@@ -374,7 +386,7 @@ export default function FormBuilder() {
                       </>
                     )}
                   </select>
-                ) : field.type === 'checkbox' ? (
+                ) : effectiveType === 'checkbox' ? (
                   <div className="space-y-3 mt-2">
                     {(field.options && field.options.length > 0 ? field.options : ['Opción A', 'Opción B', 'Opción C']).filter(o => o.trim() !== '').map((opt, i) => (
                       <label key={i} className="flex items-center gap-3 p-3 border-2 border-slate-200/60 rounded-xl hover:border-[#1e88e5] hover:bg-blue-50/50 cursor-pointer transition-colors bg-white/60">
@@ -384,7 +396,7 @@ export default function FormBuilder() {
                     ))}
                   </div>
                 ) : (
-                  <input type={field.type === 'date' ? 'date' : field.type === 'number' ? 'number' : 'text'} className="w-full bg-white/80 border-2 border-slate-200/60 rounded-xl p-4 focus:ring-4 focus:ring-blue-50 focus:border-[#1e88e5] outline-none transition-all text-slate-800 shadow-inner" />
+                  <input type={effectiveType === 'date' ? 'date' : effectiveType === 'number' ? 'number' : 'text'} className="w-full bg-white/80 border-2 border-slate-200/60 rounded-xl p-4 focus:ring-4 focus:ring-blue-50 focus:border-[#1e88e5] outline-none transition-all text-slate-800 shadow-inner" />
                 )}
               </div>
             );
@@ -556,7 +568,7 @@ export default function FormBuilder() {
                 </div>
               ) : (
                 <div className="pt-10">
-                  <img src="https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png" alt="Logo" className="h-20 object-contain mb-6" />
+                  <img src="https://res.cloudinary.com/jellvthl/image/upload/v1794291401/9499f6c9-1f56-4e02-93b3-c217c443c969.png" alt="Logo" className="h-20 object-contain mb-6" />
                 </div>
               )}
               
@@ -579,7 +591,9 @@ export default function FormBuilder() {
 
             {/* Form Fields */}
             <div className="space-y-6">
-              {fields.map((field, index) => (
+              {fields.map((field, index) => {
+                const effectiveType = getEffectiveFieldType(field);
+                return (
                 <div 
                   key={field.id}
                   draggable
@@ -627,21 +641,21 @@ export default function FormBuilder() {
                           <span className="text-sm font-bold text-slate-400">{index + 1}.</span>
                           <h4 className="text-lg font-bold text-slate-800">{field.label} {field.required && <span className="text-red-500">*</span>}</h4>
                         </div>
-                        {field.type === 'text' || field.type === 'number' || field.type === 'date' ? (
-                          <input disabled type={field.type} placeholder={field.placeholder} className="w-full border-2 border-slate-100 rounded-xl py-3 px-4 bg-slate-50 text-slate-500 cursor-not-allowed" />
-                        ) : field.type === 'textarea' ? (
+                        {effectiveType === 'text' || effectiveType === 'number' || effectiveType === 'date' ? (
+                          <input disabled type={effectiveType} placeholder={field.placeholder} className="w-full border-2 border-slate-100 rounded-xl py-3 px-4 bg-slate-50 text-slate-500 cursor-not-allowed" />
+                        ) : effectiveType === 'textarea' ? (
                           <textarea disabled placeholder={field.placeholder} className="w-full border-2 border-slate-100 rounded-xl py-3 px-4 bg-slate-50 text-slate-500 cursor-not-allowed resize-none" rows={3} />
-                        ) : field.type === 'file' || field.type === 'image' ? (
+                        ) : effectiveType === 'file' || effectiveType === 'image' ? (
                            <div className="border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 p-8 text-center flex flex-col items-center justify-center gap-3 text-slate-400">
-                             {field.type === 'file' ? <UploadCloud className="w-8 h-8"/> : <ImageIcon className="w-8 h-8"/>}
+                             {effectiveType === 'file' ? <UploadCloud className="w-8 h-8"/> : <ImageIcon className="w-8 h-8"/>}
                              <span className="font-medium">Zona de subida de archivo protegida</span>
                            </div>
-                        ) : field.type === 'select' ? (
+                        ) : effectiveType === 'select' ? (
                           <div className="w-full border-2 border-slate-100 rounded-xl py-3 px-4 bg-slate-50 text-slate-500 flex justify-between items-center cursor-not-allowed">
                             <span>Selecciona una opción...</span>
                             <div className="w-3 h-3 border-b-2 border-r-2 border-slate-400 transform rotate-45 mr-1"></div>
                           </div>
-                        ) : field.type === 'checkbox' ? (
+                        ) : effectiveType === 'checkbox' ? (
                           <div className="space-y-3 mt-2">
                             {(field.options && field.options.length > 0 ? field.options : ['Opción A', 'Opción B', 'Opción C']).filter((o: string) => o.trim() !== '').map((opt: string, i: number) => (
                               <div key={i} className="flex items-center gap-3 p-3 border-2 border-slate-100 rounded-xl bg-slate-50 opacity-70">
@@ -651,13 +665,14 @@ export default function FormBuilder() {
                             ))}
                           </div>
                         ) : (
-                          <div className="text-sm text-slate-500 border-2 border-slate-100 rounded-xl p-4 bg-slate-50 font-medium">Elemento interactivo: {field.type}</div>
+                          <div className="text-sm text-slate-500 border-2 border-slate-100 rounded-xl p-4 bg-slate-50 font-medium">Elemento interactivo: {effectiveType}</div>
                         )}
                       </>
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Footer previsualizado */}
@@ -799,6 +814,33 @@ export default function FormBuilder() {
           <div className="p-6 flex-1 overflow-y-auto">
             {activeField ? (
               <div className="space-y-6">
+                {activeField.type !== 'section' && activeField.type !== 'html' && (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Tipo de Pregunta</label>
+                    <select
+                      value={getEffectiveFieldType(activeField)}
+                      onChange={(e) => {
+                        const newType = e.target.value;
+                        const updates: Partial<Field> = { type: newType };
+                        if ((newType === 'select' || newType === 'checkbox') && (!activeField.options || activeField.options.length === 0)) {
+                          updates.options = ['Opción A', 'Opción B', 'Opción C'];
+                        }
+                        updateActiveField(updates);
+                      }}
+                      className="w-full border border-slate-300 rounded-md p-2 text-sm bg-white focus:ring-2 focus:ring-[#1e88e5] focus:border-[#1e88e5] outline-none"
+                    >
+                      <option value="text">Respuesta Corta</option>
+                      <option value="textarea">Párrafo Largo</option>
+                      <option value="date">Fecha / Fecha de Nacimiento</option>
+                      <option value="number">Número / Edad</option>
+                      <option value="select">Lista Desplegable</option>
+                      <option value="checkbox">Opciones Múltiples</option>
+                      <option value="file">Subir Archivo / PDF</option>
+                      <option value="image">Subir Fotografía</option>
+                    </select>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
                     {activeField.type === 'html' ? 'Contenido del Texto / HTML' : 'Título de la Pregunta'}
@@ -814,7 +856,18 @@ export default function FormBuilder() {
                     <input 
                       type="text" 
                       value={activeField.label}
-                      onChange={(e) => updateActiveField({ label: e.target.value })}
+                      onChange={(e) => {
+                        const newLabel = e.target.value;
+                        const updates: Partial<Field> = { label: newLabel };
+                        if (activeField.type === 'text') {
+                          if (/\b(fecha|nacimiento)\b/i.test(newLabel)) {
+                            updates.type = 'date';
+                          } else if (/\bedad\b/i.test(newLabel)) {
+                            updates.type = 'number';
+                          }
+                        }
+                        updateActiveField(updates);
+                      }}
                       className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-[#1e88e5] focus:border-[#1e88e5] outline-none"
                     />
                   )}

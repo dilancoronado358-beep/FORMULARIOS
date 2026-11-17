@@ -4,6 +4,24 @@ import { UploadCloud, Send, CheckCircle2, Loader2, AlertCircle, XCircle } from '
 import { supabase } from '../lib/supabase';
 import { saveResponseOffline } from '../lib/sync';
 
+const calculateAge = (dateStr: string): number | null => {
+  if (!dateStr) return null;
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return null;
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+  const birthDate = new Date(year, month, day);
+  if (isNaN(birthDate.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age >= 0 && age <= 130 ? age : null;
+};
+
 export default function PublicForm() {
   const { slug } = useParams(); // Using slug as parameter name to match App.tsx mapping or we can update App.tsx to use :id. App.tsx currently uses path="/f/:slug". I will use the actual ID here as the parameter.
   const navigate = useNavigate();
@@ -128,7 +146,7 @@ export default function PublicForm() {
             {/* The Logo itself */}
             <div className="absolute inset-3 bg-white/90 backdrop-blur-md rounded-full shadow-2xl flex items-center justify-center p-4 animate-pulse" style={{ animationDuration: '2s' }}>
               <img 
-                src="https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png" 
+                src="https://res.cloudinary.com/jellvthl/image/upload/v1794291401/9499f6c9-1f56-4e02-93b3-c217c443c969.png" 
                 alt="Cargando" 
                 className="w-full h-full object-contain drop-shadow-md"
               />
@@ -597,7 +615,7 @@ export default function PublicForm() {
                   <img src={bannerImage} alt="Banner" className="w-full h-48 md:h-64 object-cover mb-6 md:mb-8 relative z-10" />
                 ) : (
                   <div className="pt-6 md:pt-10">
-                    <img src="https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png" alt="Logo" className="h-16 md:h-20 object-contain mb-4 md:mb-6 drop-shadow-md relative z-10" />
+                    <img src="https://res.cloudinary.com/jellvthl/image/upload/v1794291401/9499f6c9-1f56-4e02-93b3-c217c443c969.png" alt="Logo" className="h-16 md:h-20 object-contain mb-4 md:mb-6 drop-shadow-md relative z-10" />
                   </div>
                 )}
                 
@@ -622,6 +640,11 @@ export default function PublicForm() {
                <div key={field.id} className={`prose prose-sm md:prose-base max-w-none text-slate-700 p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm ${bgImage ? 'bg-white/95 backdrop-blur-md border border-white/40' : 'bg-white border-transparent'}`} dangerouslySetInnerHTML={{ __html: field.label }} />
              );
           }
+          const labelLower = (field.label || '').toLowerCase();
+          const isDateField = field.type === 'date' || (field.type === 'text' && /(fecha|nacimiento|f\.\s*nac)/i.test(labelLower));
+          const isBirthDateField = isDateField && /(nacimiento|nac\b)/i.test(labelLower);
+          const isNumberField = field.type === 'number' || (field.type === 'text' && /\bedad\b/i.test(labelLower));
+          const computedAge = isBirthDateField && responses[field.id] ? calculateAge(String(responses[field.id])) : null;
           return (
             <div key={field.id} className={`space-y-2 md:space-y-3 p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] transition-all ${
               bgImage ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-white shadow-sm'
@@ -756,9 +779,44 @@ export default function PublicForm() {
                     );
                   })}
                 </div>
+              ) : isDateField ? (
+                <div className="space-y-2">
+                  <input 
+                    type="date"
+                    max={isBirthDateField ? new Date().toISOString().split('T')[0] : undefined}
+                    value={responses[field.id] || ''}
+                    onClick={(e) => {
+                      try {
+                        (e.currentTarget as any).showPicker?.();
+                      } catch {}
+                    }}
+                    onChange={(e) => {
+                      setResponses(prev => ({ ...prev, [field.id]: e.target.value }));
+                      if (errors[field.id]) setErrors(prev => ({ ...prev, [field.id]: false }));
+                    }}
+                    className={`w-full bg-white/80 border-2 rounded-xl p-3 md:p-4 text-sm md:text-base focus:ring-4 focus:outline-none transition-all text-slate-800 shadow-inner ${errors[field.id] ? 'border-red-300 focus:ring-red-50 focus:border-red-500' : 'border-slate-200/60 focus:ring-blue-50 focus:border-[#1e88e5]'}`} 
+                  />
+                  {computedAge !== null && (
+                    <p className="text-xs md:text-sm font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5 w-fit">
+                      Edad: {computedAge} {computedAge === 1 ? 'año' : 'años'}
+                    </p>
+                  )}
+                </div>
+              ) : isNumberField ? (
+                <input 
+                  type="number"
+                  min={/\bedad\b/i.test(labelLower) ? 0 : undefined}
+                  max={/\bedad\b/i.test(labelLower) ? 120 : undefined}
+                  value={responses[field.id] || ''}
+                  onChange={(e) => {
+                    setResponses(prev => ({ ...prev, [field.id]: e.target.value }));
+                    if (errors[field.id]) setErrors(prev => ({ ...prev, [field.id]: false }));
+                  }}
+                  className={`w-full bg-white/80 border-2 rounded-xl p-3 md:p-4 text-sm md:text-base focus:ring-4 focus:outline-none transition-all text-slate-800 shadow-inner ${errors[field.id] ? 'border-red-300 focus:ring-red-50 focus:border-red-500' : 'border-slate-200/60 focus:ring-blue-50 focus:border-[#1e88e5]'}`} 
+                />
               ) : (
                 <input 
-                  type={field.type === 'date' ? 'date' : field.type === 'number' ? 'number' : 'text'} 
+                  type="text"
                   value={responses[field.id] || ''}
                   onChange={(e) => {
                     setResponses(prev => ({ ...prev, [field.id]: e.target.value }));

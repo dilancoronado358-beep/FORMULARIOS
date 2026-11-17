@@ -58,7 +58,7 @@ export default function Login() {
         
         {/* Overlapping Logo */}
         <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg border-4 border-transparent p-2">
-          <img src="https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png" alt="Logo" className="w-full h-full object-contain" />
+          <img src="https://res.cloudinary.com/jellvthl/image/upload/v1794291401/9499f6c9-1f56-4e02-93b3-c217c443c969.png" alt="Logo" className="w-full h-full object-contain" />
         </div>
 
         <h2 className="text-white text-center text-2xl font-bold mt-10 mb-8">Iniciar Sesión</h2>

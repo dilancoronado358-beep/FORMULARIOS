@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { User, Bell, Shield, PaintBucket, Save, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
+const DEFAULT_LOGO_URL = 'https://res.cloudinary.com/jellvthl/image/upload/v1794291401/9499f6c9-1f56-4e02-93b3-c217c443c969.png';
+
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('Perfil');
   const [saved, setSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [settings, setSettings] = useState({
-    logoUrl: 'https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png',
+    logoUrl: DEFAULT_LOGO_URL,
     institutionName: 'Renovación Montufareña',
     contactEmail: 'contacto@renovacionmontufarena.org',
     description: 'Plataforma oficial de participación ciudadana y formularios.',
@@ -18,8 +20,14 @@ export default function Settings() {
     const loadSettings = async () => {
       const { data } = await supabase.from('forms').select('settings').eq('title', 'GLOBAL_APP_SETTINGS').single();
       if (data?.settings) {
-        setSettings(data.settings);
-        if (data.settings.darkMode) {
+        const loadedSettings = {
+          ...data.settings,
+          logoUrl: (!data.settings.logoUrl || data.settings.logoUrl.includes('dtmqftcsr'))
+            ? DEFAULT_LOGO_URL
+            : data.settings.logoUrl
+        };
+        setSettings(loadedSettings);
+        if (loadedSettings.darkMode) {
           document.documentElement.classList.add('dark');
         } else {
           document.documentElement.classList.remove('dark');
