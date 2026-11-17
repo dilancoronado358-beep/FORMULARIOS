@@ -25,7 +25,36 @@ export default function PublicForm() {
   useEffect(() => {
     async function loadForm() {
       try {
-        const { data, error } = await supabase.from('forms').select('*').or(`slug.eq.${slug},id.eq.${slug}`).single();
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug || '');
+        let query = supabase.from('forms').select('*');
+        if (isUUID) {
+          query = query.or(`slug.eq.${slug},id.eq.${slug}`);
+        } else {
+          query = query.eq('slug', slug);
+        }
+        let { data, error } = await query.maybeSingle();
+
+        if (error) {
+          console.warn("Error consultando formulario en Supabase:", error);
+        }
+
+        if (!data && slug) {
+          // Si el slug termina en -xxxxxx (los primeros 6 caracteres del UUID), buscar coincidencia en los formularios de Supabase
+          const shortIdMatch = slug.match(/-([0-9a-f]{6})$/i);
+          if (shortIdMatch) {
+            const prefix = shortIdMatch[1].toLowerCase();
+            const { data: allForms } = await supabase.from('forms').select('*');
+            if (allForms) {
+              data = allForms.find((f: any) => typeof f.id === 'string' && f.id.toLowerCase().startsWith(prefix)) || null;
+            }
+          }
+        }
+
+        if (!data && slug) {
+          const localForms = JSON.parse(localStorage.getItem('rm_forms_list') || '[]');
+          data = localForms.find((f: any) => f.slug === slug || f.id === slug) || null;
+        }
+
         if (data) {
           setForm(data);
           

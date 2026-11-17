@@ -109,8 +109,21 @@ export default function FormBuilder() {
   const handlePublish = async () => {
     setIsSaving(true);
     
+    const formId = id || generateUUID();
+    const generateSlug = (title: string, fId: string) => {
+      const base = (title || 'formulario')
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '') || 'formulario';
+      return `${base}-${fId.substring(0, 6)}`;
+    };
+    const formSlug = generateSlug(formDetails.title, formId);
+
     const newForm = {
-      id: id || Date.now().toString(),
+      id: formId,
+      slug: formSlug,
       title: formDetails.title,
       description: formDetails.description,
       settings: formDetails.settings,
@@ -122,14 +135,6 @@ export default function FormBuilder() {
 
     // 1. Guardar en Supabase
     try {
-      const formId = id || generateUUID();
-      
-      const generateSlug = (title: string, formId: string) => {
-        const base = (title || 'formulario').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-        return `${base}-${formId.substring(0, 6)}`;
-      };
-      const formSlug = generateSlug(newForm.title, formId);
-      
       const { error } = await supabase.from('forms').upsert({
         id: formId,
         title: newForm.title || 'Formulario sin título',
